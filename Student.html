@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>CPSU Smart QR Attendance System - Fixed Version</title>
+
+<!-- Libraries -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #eef3ee;
+}
+
+#loginPage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-box {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+input:focus {
+  outline: 2px solid #0b7a2a;
+  border-color: #0b7a2a;
+}
+
+button {
+  background: #0b7a2a;
+  color: white;
+  border: none;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.logout {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #dc3545;
+  width: auto;
+  padding: 10px 20px;
+}
+
+.error {
+  color: #dc3545;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+#dashboard {
+  display: none;
+}
+
+header {
+  background: #0b7a2a;
+  color: white;
+  text-align: center;
+  padding: 20px;
+  position: relative;
+}
+
+.container {
+  width: 95%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  flex: 1;
+  min-width: 200px;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.stat h2 {
+  margin: 10px 0 0;
+  color: #0b7a2a;
+  font-size: 32px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card h3 {
+  margin: 0 0 10px;
+  color: #333;
+  font-size: 18px;
+}
+
+.card p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.card button {
+  margin: 5px;
+  width: auto;
+  padding: 8px 15px;
+  font-size: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+table th {
+  background: #0b7a2a;
+  color: white;
+  padding: 12px;
+  font-weight: normal;
+}
+
+table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+table tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+#reader, #loginReader, #manualReader {
+  width: 100%;
+  max-width: 400px;
+  margin: 20px auto;
+  border: 2px solid #0b7a2a;
+  border-radius: 10px;
+  padding: 10px;
+  background: white;
+}
+
+.manual {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.small-note {
+  font-size: 0.85em;
+  color: #666;
+  margin: 5px 0;
+}
+
+.admin-only {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  border-left: 4px solid #0b7a2a;
+}
+
+#importStatus {
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 5px;
+  display: none;
+}
+
+.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.error-msg {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.scanner-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.scanner-controls button {
+  width: auto;
+  min-width: 150px;
+}
+
+.login-status {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 15px 30px;
+  border-radius: 5px;
+  z-index: 9999;
+  display: none;
+  animation: slideDown 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+@keyframes slideDown {
+  from {
+    top: -100px;
+    opacity: 0;
+  }
+  to {
+    top: 20px;
+    opacity: 1;
+  }
+}
+
+.login-scanner-section {
+  margin: 20px 0;
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 10px;
+}
+
+.login-scanner-section h3 {
+  color: #0b7a2a;
+  margin: 0 0 15px;
+}
+
+.camera-icon {
+  font-size: 2.5em;
+  margin-bottom: 10px;
+}
+
+.scan-message {
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.manual-login-note {
+  background: #e3f2fd;
+  padding: 15px;
+  border-radius: 5px;
+  margin: 15px 0;
+  font-size: 0.95em;
+  color: #0d47a1;
+  text-align: left;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  width: auto;
+  padding: 10px 25px;
+  background: #0b7a2a;
+}
+
+.pagination button:disabled {
+  background: #cccccc;
+}
+
+.pagination span {
+  font-size: 1em;
+  color: #333;
+  font-weight: bold;
+}
+
+.loading {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px 40px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  border-radius: 10px;
+  z-index: 10000;
+  font-size: 18px;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.export-buttons button {
+  flex: 1;
+  min-width: 200px;
+}
+
+#paginationInfo {
+  text-align: center;
+  margin: 15px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+#attendanceCount {
+  text-align: right;
+  margin-top: 10px;
+  color: #666;
+  font-size: 13px;
+}
+
+h3 {
+  color: #333;
+  margin: 25px 0 15px;
+  border-bottom: 2px solid #0b7a2a;
+  padding-bottom: 8px;
+}
+
+hr {
+  border: none;
+  border-top: 2px dashed #ccc;
+  margin: 20px 0;
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING INDICATOR -->
+<div id="loadingIndicator" class="loading">Loading...</div>
+
+<!-- GLOBAL STATUS MESSAGE -->
+<div id="loginStatusMessage" class="login-status"></div>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+<div class="login-box">
+<h2>📱 CPSU Smart Attendance</h2>
+<p class="small-note">Scan QR code OR manually enter credentials below</p>
+
+<!-- LOGIN SCANNER SECTION -->
+<div class="login-scanner-section">
+<div class="camera-icon">📷</div>
+<h3>Option 1: Scan QR Code</h3>
+<div id="loginReader"></div>
+<div id="scanFeedback" class="scan-message" style="display:none;"></div>
+</div>
+
+<!-- Manual Login Option -->
+<div class="manual-login-note">
+<strong>✏️ Option 2: Manual Login</strong><br>
+Type your credentials below. Attendance will be recorded automatically upon successful login.
+</div>
+
+<!-- Login Form -->
+<div id="loginForm">
+<input type="text" id="username" placeholder="Username (Student ID for students)" autocomplete="off">
+<input type="password" id="password" placeholder="Password" autocomplete="off">
+<button onclick="login()" id="loginButton">🔑 Login & Record Attendance</button>
+</div>
+
+<p id="error" class="error"></p>
+
+<!-- Quick Info -->
+<p class="small-note">👤 Admin: admin / admin123</p>
+<p class="small-note">🎓 Students: Use Student ID + cpsu[last4] or scan QR</p>
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+<header>
+<h1>Central Philippines State University</h1>
+<p>Smart QR Student Attendance System</p>
+<button class="logout" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+<div class="stats">
+<div class="stat">Total Students <h2 id="totalStudents">0</h2></div>
+<div class="stat">Today's Attendance <h2 id="todayAttendance">0</h2></div>
+</div>
+
+<!-- ADMIN CONTROLS -->
+<div id="adminControls" class="admin-only">
+<h3>⚙️ Admin Tools</h3>
+
+<!-- Import Status Messages -->
+<div id="importStatus" class="import-status"></div>
+
+<div style="margin:15px 0;">
+<h4>📥 Import Excel (.xlsx) Class List</h4>
+<p class="small-note">Format: Name, Course, Section (first row headers)</p>
+<input type="file" id="excelFile" accept=".xlsx, .xls">
+<div style="display:flex; gap:10px; margin-top:10px;">
+<button onclick="importExcel()">Import Excel</button> 
+<button onclick="downloadSampleExcel()">Download Sample</button>
+</div>
+</div>
+
+<div style="margin:15px 0;">
+<h4>📄 Import CSV File</h4>
+<p class="small-note">Format: Name,Course,Section (first row headers)</p>
+<input type="file" id="csvFile" accept=".csv">
+<div style="display:flex; gap:10px; margin-top:10px;">
+<button onclick="importCSV()">Import CSV</button>
+<button onclick="downloadSampleCSV()">Download Sample</button>
+</div>
+</div>
+
+<div style="margin:15px 0;">
+<h4>📝 Import Word Document</h4>
+<p class="small-note">Format: Name TAB Course TAB Section (one per line)</p>
+<input type="file" id="wordFile" accept=".docx">
+<div style="display:flex; gap:10px; margin-top:10px;">
+<button onclick="importWord()">Import Word</button>
+</div>
+</div>
+
+<div class="manual">
+<h4>➕ Add Single Student</h4>
+<input type="text" id="manualName" placeholder="Full name">
+<input type="text" id="manualCourse" placeholder="Course (e.g., BSCS)">
+<input type="text" id="manualSection" placeholder="Section">
+<button onclick="addStudent()">Add Student</button>
+</div>
+
+<hr>
+<h4>🔐 Auto-create student login accounts</h4>
+<button onclick="generateAllStudentLogins()">Generate Student Logins</button>
+<div id="loginCreateMsg" style="background:#e0ffe0;padding:10px;margin-top:10px;border-radius:5px;"></div>
+</div>
+
+<!-- SEARCH STUDENT -->
+<h3>🔎 Search Students</h3>
+<input type="text" id="studentSearch" placeholder="Type name, course, section or ID" onkeyup="debounceSearch()">
+
+<!-- Pagination Info -->
+<div id="paginationInfo"></div>
+
+<!-- Student Cards Container -->
+<div class="cards" id="studentCards"></div>
+
+<!-- Pagination Controls -->
+<div id="pagination" class="pagination"></div>
+
+<!-- QR SCANNER SECTION -->
+<h3>📷 QR Attendance Scanner (Manual)</h3>
+<div class="scanner-controls">
+<button onclick="startManualScanner()">Start Manual Scanner</button>
+<button onclick="stopManualScanner()" style="background:#dc3545;">Stop Scanner</button>
+</div>
+<div id="manualReader"></div>
+<div id="scanStatus" style="text-align:center; margin:10px; padding:10px;"></div>
+
+<!-- MANUAL ATTENDANCE -->
+<div class="manual">
+<h4>✏️ Manual Attendance Entry</h4>
+<input type="text" id="manualStudentID" placeholder="Enter Student ID">
+<button onclick="recordManualAttendance()">Record Attendance</button>
+</div>
+
+<!-- EXPORT ALL QRS -->
+<div class="export-buttons">
+<button onclick="printAllQRCodes()" style="background:#4a6da7;">🖨️ Print All QR Codes</button>
+</div>
+
+<h3>📅 Attendance Records</h3>
+<div style="display:flex; gap:10px; margin:15px 0; flex-wrap:wrap;">
+<input type="date" id="filterDate" onchange="filterAttendance()" style="width:auto; flex:1;">
+<button onclick="exportAttendance()" style="width:auto; padding:10px 20px;">Export CSV</button>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Student ID</th>
+<th>Name</th>
+<th>Date</th>
+<th>Time</th>
+<th>Method</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="attendanceTable"></tbody>
+</table>
+<div id="attendanceCount"></div>
+
+</div>
+</div>
+
+<script>
+/* ========== GLOBAL DATA ========== */
+let users = [];
+let currentRole = null;
+let currentUserID = null;
+let students = [];
+let attendance = [];
+
+// Load data from localStorage
+try {
+  students = JSON.parse(localStorage.getItem("students")) || [];
+  attendance = JSON.parse(localStorage.getItem("attendance")) || [];
+} catch (e) {
+  console.error("Error loading from localStorage:", e);
+  students = [];
+  attendance = [];
+}
+
+// Pagination variables
+let currentPage = 1;
+const studentsPerPage = 20;
+
+const BASE_ADMIN = { username: "admin", password: "admin123", role: "Admin", studentId: null };
+
+function loadUsers() {
+  try {
+    let stored = localStorage.getItem("users");
+    if (stored) {
+      users = JSON.parse(stored);
+    } else {
+      users = [BASE_ADMIN];
+    }
+    if (!users.find(u => u.username === "admin")) users.push(BASE_ADMIN);
+    saveUsers();
+  } catch (e) {
+    console.error("Error loading users:", e);
+    users = [BASE_ADMIN];
+  }
+}
+
+function saveUsers() { 
+  try {
+    localStorage.setItem("users", JSON.stringify(users)); 
+  } catch (e) {
+    console.error("Error saving users:", e);
+  }
+}
+
+loadUsers();
+
+let loginScanner = null;
+let manualScanner = null;
+let lastScannedStudent = null;
+let searchTimeout;
+
+/* ========== UTILITY FUNCTIONS ========== */
+function showLoading(show) {
+  let loader = document.getElementById("loadingIndicator");
+  if (loader) loader.style.display = show ? "block" : "none";
+}
+
+function showLoginStatus(message, isSuccess = true) {
+  let statusDiv = document.getElementById("loginStatusMessage");
+  if (!statusDiv) return;
+  
+  statusDiv.style.display = "block";
+  statusDiv.style.background = isSuccess ? "#d4edda" : "#f8d7da";
+  statusDiv.style.color = isSuccess ? "#155724" : "#721c24";
+  statusDiv.style.border = isSuccess ? "1px solid #c3e6cb" : "1px solid #f5c6cb";
+  statusDiv.innerHTML = message;
+  setTimeout(() => { statusDiv.style.display = "none"; }, 3000);
+}
+
+function showImportStatus(message, isSuccess = true) {
+  let statusDiv = document.getElementById("importStatus");
+  if (!statusDiv) return;
+  
+  statusDiv.style.display = "block";
+  statusDiv.className = "import-status " + (isSuccess ? "success" : "error-msg");
+  statusDiv.innerHTML = message;
+  setTimeout(() => { statusDiv.style.display = "none"; }, 3000);
+}
+
+function showScanStatus(message, isSuccess = true) {
+  let statusDiv = document.getElementById("scanStatus");
+  if (!statusDiv) return;
+  
+  statusDiv.style.display = "block";
+  statusDiv.style.background = isSuccess ? "#d4edda" : "#f8d7da";
+  statusDiv.style.color = isSuccess ? "#155724" : "#721c24";
+  statusDiv.innerHTML = message;
+  setTimeout(() => { statusDiv.style.display = "none"; }, 3000);
+}
+
+function generateID() {
+  let year = new Date().getFullYear();
+  let number = students.length + 1;
+  return "CPSU-MAIN-" + year + "-" + number.toString().padStart(4, '0');
+}
+
+/* ========== LOGIN SCANNER FUNCTIONS ========== */
+function startLoginScanner() {
+  if (!loginScanner) {
+    loginScanner = new Html5Qrcode("loginReader");
+  }
+  
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+  
+  loginScanner.start(
+    { facingMode: "environment" },
+    config,
+    onLoginScanSuccess,
+    onLoginScanError
+  ).catch(err => {
+    console.error("Login scanner error:", err);
+    showLoginStatus("❌ Failed to start camera. Please check permissions.", false);
+  });
+}
+
+function onLoginScanSuccess(decodedText) {
+  stopLoginScanner();
+  
+  let studentID = decodedText.trim();
+  let student = students.find(s => s.studentID === studentID);
+  let feedbackDiv = document.getElementById("scanFeedback");
+  
+  if (!feedbackDiv) return;
+  
+  if (student) {
+    let last4 = studentID.slice(-4);
+    let password = "cpsu" + last4;
+    
+    document.getElementById("username").value = studentID;
+    document.getElementById("password").value = password;
+    lastScannedStudent = student;
+    
+    feedbackDiv.style.display = "block";
+    feedbackDiv.style.background = "#d4edda";
+    feedbackDiv.style.color = "#155724";
+    feedbackDiv.innerHTML = `
+      ✅ Student Found!<br>
+      <strong>${student.name}</strong><br>
+      ${student.course} - ${student.section}<br>
+      Click "Login & Record Attendance" to continue
+    `;
+  } else {
+    feedbackDiv.style.display = "block";
+    feedbackDiv.style.background = "#f8d7da";
+    feedbackDiv.style.color = "#721c24";
+    feedbackDiv.innerHTML = `
+      ❌ Student Not Found<br>
+      ID: ${studentID}<br>
+      Please check with administrator
+    `;
+    showLoginStatus("❌ Unknown student ID: " + studentID, false);
+  }
+  
+  setTimeout(() => {
+    if (document.getElementById("loginPage").style.display !== "none") {
+      startLoginScanner();
+    }
+  }, 3000);
+}
+
+function onLoginScanError(error) {
+  console.warn("Login scan error:", error);
+}
+
+function stopLoginScanner() {
+  if (loginScanner && loginScanner.isScanning) {
+    loginScanner.stop().then(() => {
+      console.log("Login scanner stopped");
+    }).catch(err => {
+      console.error("Error stopping login scanner:", err);
+    });
+  }
+}
+
+/* ========== ATTENDANCE RECORDING FUNCTIONS ========== */
+function recordAttendanceDirect(studentID, method) {
+  let student = students.find(s => s.studentID === studentID);
+  if (!student) return false;
+
+  let today = new Date().toLocaleDateString();
+  let now = new Date();
+  let timeString = now.toLocaleTimeString();
+
+  let existingRecord = attendance.find(a => a.studentID === studentID && a.date === today);
+  if (existingRecord) return false;
+
+  attendance.push({
+    studentID: studentID,
+    date: today,
+    time: timeString,
+    method: method
+  });
+
+  try {
+    localStorage.setItem("attendance", JSON.stringify(attendance));
+  } catch (e) {
+    console.error("Error saving attendance:", e);
+  }
+  
+  return true;
+}
+
+function recordAttendance(studentID, method) {
+  let result = recordAttendanceDirect(studentID, method);
+  
+  if (result) {
+    let student = students.find(s => s.studentID === studentID);
+    if (student) {
+      showScanStatus("✅ Attendance recorded for " + student.name + " via " + method, true);
+    }
+  } else {
+    let student = students.find(s => s.studentID === studentID);
+    if (student) {
+      showScanStatus("⚠️ " + student.name + " already recorded today", false);
+    }
+  }
+
+  if (document.getElementById("dashboard").style.display === "block") {
+    renderAttendance();
+    updateStats();
+  }
+
+  return result;
+}
+
+/* ========== LOGIN FUNCTION ========== */
+function login() {
+  let u = document.getElementById("username").value.trim();
+  let p = document.getElementById("password").value.trim();
+  
+  if (!u || !p) {
+    document.getElementById("error").innerText = "Please enter username and password";
+    return;
+  }
+  
+  let user = users.find(x => x.username === u && x.password === p);
+  
+  if (user) {
+    currentRole = user.role;
+    currentUserID = user.studentId || null;
+    
+    if (currentRole !== "Admin" && currentUserID) {
+      let recorded = recordAttendanceDirect(currentUserID, "Login");
+      if (recorded) {
+        let student = students.find(s => s.studentID === currentUserID);
+        if (student) {
+          showLoginStatus(`✅ Attendance recorded for ${student.name}`, true);
+        }
+      }
+    }
+    
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+
+    if (currentRole !== "Admin") {
+      document.getElementById("adminControls").style.display = "none";
+    } else {
+      document.getElementById("adminControls").style.display = "block";
+    }
+
+    // Reset to first page
+    currentPage = 1;
+    renderStudents();
+    renderAttendance();
+    updateStats();
+    
+    stopLoginScanner();
+    
+    if (currentRole === "Admin") {
+      showLoginStatus("👋 Welcome Admin!", true);
+    } else {
+      let student = students.find(s => s.studentID === u);
+      if (student) {
+        showLoginStatus(`👋 Welcome ${student.name}!`, true);
+      }
+    }
+  } else {
+    document.getElementById("error").innerText = "Invalid credentials";
+  }
+}
+
+/* ========== MANUAL SCANNER FUNCTIONS ========== */
+function startManualScanner() {
+  if (!manualScanner) {
+    manualScanner = new Html5Qrcode("manualReader");
+  }
+  
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+  
+  manualScanner.start(
+    { facingMode: "environment" },
+    config,
+    onManualScanSuccess,
+    onManualScanError
+  ).catch(err => {
+    console.error("Manual scanner error:", err);
+    showScanStatus("❌ Failed to start camera. Please check permissions.", false);
+  });
+}
+
+function onManualScanSuccess(decodedText) {
+  stopManualScanner();
+  let studentID = decodedText.trim();
+  recordAttendance(studentID, "QR Scan");
+  
+  setTimeout(() => {
+    startManualScanner();
+  }, 3000);
+}
+
+function onManualScanError(error) {
+  console.warn("Manual scan error:", error);
+}
+
+function stopManualScanner() {
+  if (manualScanner && manualScanner.isScanning) {
+    manualScanner.stop().then(() => {
+      console.log("Manual scanner stopped");
+    }).catch(err => {
+      console.error("Error stopping manual scanner:", err);
+    });
+  }
+}
+
+/* ========== MANUAL ATTENDANCE ========== */
+function recordManualAttendance() {
+  let studentID = document.getElementById("manualStudentID").value.trim();
+  if (!studentID) {
+    showScanStatus("❌ Please enter a Student ID", false);
+    return;
+  }
+  
+  if (recordAttendance(studentID, "Manual")) {
+    document.getElementById("manualStudentID").value = "";
+  }
+}
+
+/* ========== SAMPLE FILE DOWNLOADS ========== */
+function downloadSampleExcel() {
+  let data = [
+    ["Name", "Course", "Section"],
+    ["Juan Dela Cruz", "BSCS", "3A"],
+    ["Maria Santos", "BSIT", "2B"],
+    ["Jose Protacio", "BSCE", "4C"]
+  ];
+  
+  let wb = XLSX.utils.book_new();
+  let ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, "Students");
+  XLSX.writeFile(wb, "sample_students.xlsx");
+}
+
+function downloadSampleCSV() {
+  let csv = "Name,Course,Section\nJuan Dela Cruz,BSCS,3A\nMaria Santos,BSIT,2B\nJose Protacio,BSCE,4C";
+  let blob = new Blob([csv], { type: "text/csv" });
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "sample_students.csv";
+  link.click();
+}
+
+/* ========== EXCEL IMPORT ========== */
+function importExcel() {
+  let file = document.getElementById("excelFile").files[0];
+  if (!file) {
+    showImportStatus("Please select an Excel file first", false);
+    return;
+  }
+
+  showLoading(true);
+  
+  let reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let data = new Uint8Array(e.target.result);
+      let workbook = XLSX.read(data, { type: 'array' });
+      
+      if (workbook.SheetNames.length === 0) {
+        showImportStatus("Excel file has no sheets", false);
+        showLoading(false);
+        return;
+      }
+      
+      let firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      let rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+      
+      if (rows.length < 2) {
+        showImportStatus("File has no data rows", false);
+        showLoading(false);
+        return;
+      }
+
+      let importedCount = 0;
+
+      for (let i = 1; i < rows.length; i++) {
+        let row = rows[i];
+        if (row && row.length >= 3 && row[0] && row[1] && row[2]) {
+          let name = String(row[0]).trim();
+          let course = String(row[1]).trim();
+          let section = String(row[2]).trim();
+          
+          if (name && course && section) {
+            students.push({
+              studentID: generateID(),
+              name: name,
+              course: course,
+              section: section
+            });
+            importedCount++;
+          }
+        }
+      }
+
+      if (importedCount > 0) {
+        saveStudents();
+        showImportStatus(`✅ Successfully imported ${importedCount} students.`, true);
+      } else {
+        showImportStatus("No valid student data found", false);
+      }
+
+      document.getElementById("excelFile").value = "";
+      
+    } catch (error) {
+      console.error("Excel import error:", error);
+      showImportStatus("Error reading Excel file", false);
+    }
+    showLoading(false);
+  };
+  
+  reader.readAsArrayBuffer(file);
+}
+
+/* ========== CSV IMPORT ========== */
+function importCSV() {
+  let file = document.getElementById("csvFile").files[0];
+  if (!file) {
+    showImportStatus("Please select a CSV file first", false);
+    return;
+  }
+
+  showLoading(true);
+  
+  let reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let content = e.target.result;
+      let rows = content.split(/\r?\n/);
+      
+      if (rows.length < 2) {
+        showImportStatus("File has no data rows", false);
+        showLoading(false);
+        return;
+      }
+
+      let importedCount = 0;
+
+      for (let i = 1; i < rows.length; i++) {
+        let line = rows[i].trim();
+        if (line === "") continue;
+        
+        let d = line.split(",").map(item => item.trim());
+        
+        if (d.length >= 3 && d[0] && d[1] && d[2]) {
+          students.push({
+            studentID: generateID(),
+            name: d[0],
+            course: d[1],
+            section: d[2]
+          });
+          importedCount++;
+        }
+      }
+
+      if (importedCount > 0) {
+        saveStudents();
+        showImportStatus(`✅ Successfully imported ${importedCount} students.`, true);
+      } else {
+        showImportStatus("No valid student data found", false);
+      }
+
+      document.getElementById("csvFile").value = "";
+      
+    } catch (error) {
+      console.error("CSV import error:", error);
+      showImportStatus("Error reading CSV file", false);
+    }
+    showLoading(false);
+  };
+  
+  reader.readAsText(file);
+}
+
+/* ========== WORD IMPORT ========== */
+function importWord() {
+  let file = document.getElementById("wordFile").files[0];
+  if (!file) {
+    showImportStatus("Please select a Word file first", false);
+    return;
+  }
+
+  showLoading(true);
+  
+  let reader = new FileReader();
+  reader.onload = function(e) {
+    mammoth.extractRawText({ arrayBuffer: e.target.result })
+      .then(res => {
+        let lines = res.value.split("\n");
+        let importedCount = 0;
+
+        lines.forEach(line => {
+          line = line.trim();
+          if (line === "") return;
+          
+          let d = line.split("\t").map(item => item.trim());
+          
+          if (d.length < 3) {
+            d = line.split(/\s{2,}/).map(item => item.trim());
+          }
+          
+          if (d.length >= 3 && d[0] && d[1] && d[2]) {
+            students.push({
+              studentID: generateID(),
+              name: d[0],
+              course: d[1],
+              section: d[2]
+            });
+            importedCount++;
+          }
+        });
+
+        if (importedCount > 0) {
+          saveStudents();
+          showImportStatus(`✅ Successfully imported ${importedCount} students.`, true);
+        } else {
+          showImportStatus("No valid student data found", false);
+        }
+
+        document.getElementById("wordFile").value = "";
+        showLoading(false);
+      })
+      .catch(error => {
+        console.error("Mammoth error:", error);
+        showImportStatus("Error parsing Word document", false);
+        showLoading(false);
+      });
+  };
+  
+  reader.readAsArrayBuffer(file);
+}
+
+function logout() { 
+  location.reload(); 
+}
+
+/* ========== STUDENT MANAGEMENT ========== */
+function addStudent() {
+  let name = document.getElementById("manualName").value.trim();
+  let course = document.getElementById("manualCourse").value.trim();
+  let section = document.getElementById("manualSection").value.trim();
+  
+  if (!name || !course || !section) { 
+    showImportStatus("Please fill all fields", false);
+    return; 
+  }
+  
+  students.push({
+    studentID: generateID(),
+    name: name,
+    course: course,
+    section: section
+  });
+  
+  saveStudents();
+  
+  document.getElementById("manualName").value = "";
+  document.getElementById("manualCourse").value = "";
+  document.getElementById("manualSection").value = "";
+  
+  showImportStatus(`✅ Student "${name}" added successfully`, true);
+}
+
+function saveStudents() {
+  try {
+    localStorage.setItem("students", JSON.stringify(students));
+  } catch (e) {
+    console.error("Error saving students:", e);
+  }
+  
+  renderStudents();
+  updateStats();
+}
+
+function removeStudent(id) {
+  if (confirm("Are you sure you want to remove this student?")) {
+    students = students.filter(s => s.studentID !== id);
+    attendance = attendance.filter(a => a.studentID !== id);
+    users = users.filter(u => u.studentId !== id);
+    
+    try {
+      localStorage.setItem("students", JSON.stringify(students));
+      localStorage.setItem("attendance", JSON.stringify(attendance));
+      saveUsers();
+    } catch (e) {
+      console.error("Error saving after removal:", e);
+    }
+    
+    renderStudents();
+    renderAttendance();
+    updateStats();
+    showImportStatus("Student removed", true);
+  }
+}
+
+/* ========== SEARCH AND PAGINATION ========== */
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    currentPage = 1;
+    renderStudents();
+  }, 300);
+}
+
+function renderStudents() {
+  showLoading(true);
+  
+  setTimeout(() => {
+    let container = document.getElementById("studentCards");
+    let searchInput = document.getElementById("studentSearch");
+    
+    if (!container || !searchInput) {
+      showLoading(false);
+      return;
+    }
+    
+    let searchTerm = searchInput.value.toLowerCase();
+    
+    // Filter students
+    let filtered = students.filter(s => 
+      s.name.toLowerCase().includes(searchTerm) ||
+      s.course.toLowerCase().includes(searchTerm) ||
+      s.section.toLowerCase().includes(searchTerm) ||
+      s.studentID.toLowerCase().includes(searchTerm)
+    );
+
+    let totalPages = Math.ceil(filtered.length / studentsPerPage);
+    
+    // Ensure current page is valid
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+    
+    // Update pagination info
+    let infoDiv = document.getElementById("paginationInfo");
+    if (infoDiv) {
+      infoDiv.innerHTML = `Showing ${filtered.length} students (Page ${currentPage} of ${totalPages || 1})`;
+    }
+
+    // Apply pagination
+    let start = (currentPage - 1) * studentsPerPage;
+    let end = start + studentsPerPage;
+    let paginatedStudents = filtered.slice(start, end);
+
+    container.innerHTML = "";
+    
+    if (paginatedStudents.length === 0) {
+      container.innerHTML = "<div style='text-align:center; width:100%; padding:40px;'>No students found</div>";
+    } else {
+      paginatedStudents.forEach(s => {
+        let card = document.createElement("div");
+        card.className = "card";
+
+        let buttons = "";
+        if (currentRole === "Admin") {
+          buttons = `<button onclick="downloadQR('${s.studentID}')">⬇️ QR</button>
+                     <button onclick="removeStudent('${s.studentID}')" style="background:#dc3545;">❌ Remove</button>`;
+        } else if (currentRole === "Student" && s.studentID === currentUserID) {
+          buttons = `<button onclick="downloadQR('${s.studentID}')">⬇️ My QR</button>`;
+        }
+
+        // Create a temporary div for QR code
+        let qrDivId = `qr-${s.studentID}-${Date.now()}`;
+        
+        card.innerHTML = `
+          <h3>${s.name}</h3>
+          <p>${s.course} · ${s.section}</p>
+          <p style="font-size:0.8em; word-break:break-all;">${s.studentID}</p>
+          <div id="${qrDivId}" style="margin:10px 0;"></div>
+          <div style="display:flex; gap:5px; justify-content:center;">${buttons}</div>
+        `;
+        
+        container.appendChild(card);
+        
+        // Generate QR code
+        setTimeout(() => {
+          try {
+            new QRCode(document.getElementById(qrDivId), {
+              text: s.studentID,
+              width: 100,
+              height: 100
+            });
+          } catch (e) {
+            console.error("QR generation error:", e);
+          }
+        }, 10);
+      });
+    }
+
+    // Update pagination controls
+    updatePaginationControls(filtered.length);
+    showLoading(false);
+  }, 10);
+}
+
+function updatePaginationControls(totalStudents) {
+  let totalPages = Math.ceil(totalStudents / studentsPerPage);
+  let paginationDiv = document.getElementById("pagination");
+  
+  if (!paginationDiv) return;
+  
+  if (totalPages <= 1) {
+    paginationDiv.innerHTML = "";
+    return;
+  }
+  
+  paginationDiv.innerHTML = `
+    <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+    <span>Page ${currentPage} of ${totalPages}</span>
+    <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+  `;
+}
+
+function changePage(newPage) {
+  currentPage = newPage;
+  renderStudents();
+  
+  // Scroll to top of student cards
+  let cards = document.getElementById("studentCards");
+  if (cards) {
+    cards.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function downloadQR(id) {
+  // Find the canvas element
+  let canvas = document.querySelector(`[id^="qr-${id}"] canvas`);
+  if (!canvas) {
+    // Try to find by searching all canvases
+    let allCanvases = document.querySelectorAll('canvas');
+    for (let canvas of allCanvases) {
+      if (canvas.parentElement && canvas.parentElement.id && canvas.parentElement.id.includes(id)) {
+        canvas = canvas;
+        break;
+      }
+    }
+  }
+  
+  if (!canvas) {
+    alert("QR code not found. Please try again.");
+    return;
+  }
+  
+  let link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = id + ".png";
+  link.click();
+}
+
+/* ========== PRINT QR CODES ========== */
+function printAllQRCodes() {
+  showLoading(true);
+  
+  // Create a new window for printing
+  let printWindow = window.open('', '_blank');
+  
+  let html = `
+    <html>
+    <head>
+      <title>CPSU Student QR Codes</title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #0b7a2a; text-align: center; }
+        .qr-grid { 
+          display: grid; 
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+          gap: 20px; 
+          margin-top: 20px;
+        }
+        .qr-card { 
+          text-align: center; 
+          border: 1px solid #ddd; 
+          padding: 15px; 
+          border-radius: 5px;
+          page-break-inside: avoid;
+        }
+        .qr-name { font-weight: bold; margin: 10px 0 5px; }
+        .qr-details { font-size: 0.9em; color: #666; margin: 5px 0; }
+        .qr-id { font-size: 0.8em; color: #999; word-break: break-all; }
+        @media print {
+          .qr-grid { grid-template-columns: repeat(4, 1fr); }
+          button { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <h1>CPSU Student QR Codes</h1>
+      <p>Total: ${students.length} students</p>
+      <button onclick="window.print()">Print</button>
+      <div class="qr-grid" id="qrContainer"></div>
+      <script>
+        let students = ${JSON.stringify(students)};
+        let container = document.getElementById('qrContainer');
+        
+        students.forEach(s => {
+          let card = document.createElement('div');
+          card.className = 'qr-card';
+          
+          let qrDivId = 'qr-' + s.studentID.replace(/[^a-zA-Z0-9]/g, '');
+          
+          card.innerHTML = \`
+            <div class="qr-name">\${s.name}</div>
+            <div class="qr-details">\${s.course} - \${s.section}</div>
+            <div class="qr-id">\${s.studentID}</div>
+            <div id="\${qrDivId}"></div>
+          \`;
+          
+          container.appendChild(card);
+          
+          setTimeout(() => {
+            new QRCode(document.getElementById(qrDivId), {
+              text: s.studentID,
+              width: 120,
+              height: 120
+            });
+          }, 10);
+        });
+      <\/script>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(html);
+  printWindow.document.close();
+  
+  setTimeout(() => {
+    showLoading(false);
+  }, 2000);
+}
+
+/* ========== ATTENDANCE FUNCTIONS ========== */
+function renderAttendance(list = attendance) {
+  let tbody = document.getElementById("attendanceTable");
+  if (!tbody) return;
+  
+  tbody.innerHTML = "";
+  
+  // Show only last 50 records for performance
+  let recentList = list.slice().reverse().slice(0, 50);
+  
+  if (recentList.length === 0) {
+    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px;'>No attendance records found</td></tr>";
+  } else {
+    recentList.forEach((a, idx) => {
+      let student = students.find(s => s.studentID === a.studentID);
+      let name = student ? student.name : "Unknown";
+      let delBtn = (currentRole === "Admin") 
+        ? `<button onclick="deleteAttendance('${a.studentID}', '${a.date}')" style="background:#dc3545; padding:5px 10px;">🗑️</button>` 
+        : "";
+      tbody.innerHTML += `<tr><td>${a.studentID}</td><td>${name}</td><td>${a.date}</td><td>${a.time}</td><td>${a.method}</td><td>${delBtn}</td></tr>`;
+    });
+  }
+  
+  let countDiv = document.getElementById("attendanceCount");
+  if (countDiv) {
+    countDiv.innerHTML = `Showing recent 50 of ${attendance.length} total records`;
+  }
+}
+
+function deleteAttendance(studentID, date) {
+  if (confirm("Are you sure you want to delete this attendance record?")) {
+    attendance = attendance.filter(a => !(a.studentID === studentID && a.date === date));
+    try {
+      localStorage.setItem("attendance", JSON.stringify(attendance));
+    } catch (e) {
+      console.error("Error saving attendance:", e);
+    }
+    renderAttendance();
+    updateStats();
+    showImportStatus("Attendance record deleted", true);
+  }
+}
+
+function filterAttendance() {
+  let d = document.getElementById("filterDate").value;
+  if (!d) { 
+    renderAttendance(); 
+    return; 
+  }
+  
+  let filtered = attendance.filter(a => {
+    // Convert date strings to comparable format
+    let ad = new Date(a.date);
+    let adStr = ad.toISOString().split("T")[0];
+    return adStr === d;
+  });
+  
+  renderAttendance(filtered);
+  
+  let countDiv = document.getElementById("attendanceCount");
+  if (countDiv) {
+    countDiv.innerHTML = `Showing ${filtered.length} records for ${d}`;
+  }
+}
+
+function exportAttendance() {
+  let csv = "StudentID,Name,Date,Time,Method\n";
+  
+  attendance.forEach(a => {
+    let s = students.find(st => st.studentID === a.studentID);
+    let name = s ? s.name : "Unknown";
+    // Escape any commas in name
+    let escapedName = name.includes(',') ? `"${name}"` : name;
+    csv += `${a.studentID},${escapedName},${a.date},${a.time},${a.method}\n`;
+  });
+  
+  let blob = new Blob([csv], { type: "text/csv" });
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "attendance_" + new Date().toISOString().split("T")[0] + ".csv";
+  link.click();
+}
+
+function updateStats() {
+  let totalEl = document.getElementById("totalStudents");
+  let todayEl = document.getElementById("todayAttendance");
+  
+  if (totalEl) totalEl.innerText = students.length;
+  
+  let today = new Date().toLocaleDateString();
+  let count = attendance.filter(a => a.date === today).length;
+  
+  if (todayEl) todayEl.innerText = count;
+}
+
+function generateAllStudentLogins() {
+  showLoading(true);
+  
+  setTimeout(() => {
+    let created = 0;
+    students.forEach(s => {
+      let id = s.studentID;
+      let last4 = id.slice(-4);
+      let password = "cpsu" + last4;
+      let exists = users.find(u => u.studentId === id);
+      if (!exists) {
+        users.push({
+          username: id,
+          password: password,
+          role: "Student",
+          studentId: id
+        });
+        created++;
+      }
+    });
+    saveUsers();
+    
+    let msgDiv = document.getElementById("loginCreateMsg");
+    if (msgDiv) {
+      msgDiv.innerHTML = `✅ ${created} student login accounts created/verified.`;
+    }
+    
+    showLoading(false);
+    showImportStatus(`✅ ${created} student logins generated`, true);
+  }, 10);
+}
+
+/* ========== INITIALIZATION ========== */
+window.onload = function() {
+  // Ensure admin exists
+  if (!users.find(u => u.username === "admin")) {
+    users.push(BASE_ADMIN);
+    saveUsers();
+  }
+  
+  // Start login scanner
+  setTimeout(() => {
+    if (document.getElementById("loginPage").style.display !== "none") {
+      startLoginScanner();
+    }
+  }, 1000);
+  
+  // Clean up on unload
+  window.addEventListener('beforeunload', function() {
+    if (loginScanner && loginScanner.isScanning) {
+      loginScanner.stop();
+    }
+    if (manualScanner && manualScanner.isScanning) {
+      manualScanner.stop();
+    }
+  });
+};
+
+// Enter key for login
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && document.getElementById("loginPage").style.display !== "none") {
+    login();
+  }
+});
+</script>
+</body>
+</html>
