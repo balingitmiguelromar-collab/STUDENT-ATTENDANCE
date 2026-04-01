@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
 * {
@@ -664,6 +665,17 @@ hr {
 canvas {
   max-height: 300px;
 }
+
+.danger-btn {
+  background: #dc3545;
+  margin-top: 10px;
+}
+
+.warning-text {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+}
 </style>
 </head>
 <body>
@@ -717,7 +729,7 @@ Type your credentials below. Location will be verified before recording attendan
 <p id="error" class="error"></p>
 
 <!-- Quick Info -->
-
+<p class="small-note">👤 Admin: admin / CPSUadmin2026</p>
 <p class="small-note">🎓 Student Example: CPSU-VIC-2026-0001 (password provided by admin)</p>
 </div>
 </div>
@@ -820,6 +832,8 @@ Type your credentials below. Location will be verified before recording attendan
 <h4>🔐 Manage Student Accounts</h4>
 <button onclick="showStudentPasswords()" style="background:#17a2b8;">👁️ View All Student Passwords</button>
 <button onclick="resetStudentPassword()" style="background:#ff9800;">🔄 Reset Student Password</button>
+<button onclick="deleteAllStudents()" class="danger-btn" style="background:#dc3545;">🗑️ DELETE ALL STUDENTS (Permanent)</button>
+<p class="warning-text">⚠️ Warning: This will permanently remove all students, their accounts, and all attendance records!</p>
 <div id="passwordModal" class="modal" style="display:none;">
   <div class="modal-content">
     <h3>Student Passwords</h3>
@@ -940,6 +954,9 @@ let lastAttendanceHash = "";
 let lastStudentsHash = "";
 let attendanceChart = null;
 
+// Search timeout variable
+let searchTimeout;
+
 // Load data
 function loadAllData() {
   try {
@@ -1005,6 +1022,25 @@ function saveAllData() {
   localStorage.setItem("attendanceHistory", JSON.stringify(attendanceHistory));
   localStorage.setItem("users", JSON.stringify(users));
   localStorage.setItem("campusConfig", JSON.stringify(campusConfig));
+}
+
+// ========== DELETE ALL STUDENTS FUNCTION ==========
+function deleteAllStudents() {
+  if (confirm("⚠️ DANGER: This will permanently delete ALL students, their user accounts, and ALL attendance records (both today and history). This action CANNOT be undone. Are you ABSOLUTELY sure?")) {
+    students = [];
+    attendance = [];
+    attendanceHistory = [];
+    users = users.filter(u => u.role === "Admin");
+    saveAllData();
+    localStorage.setItem("lastResetDate", new Date().toLocaleDateString());
+    renderStudents();
+    renderAttendance();
+    updateStats();
+    updateNSTPStats();
+    updateChart();
+    showMessage("✅ All students, accounts, and attendance records have been permanently deleted.", true);
+    if (attendanceChart) { attendanceChart.data.datasets[0].data = []; attendanceChart.update(); }
+  }
 }
 
 // ========== REAL-TIME UPDATE FUNCTIONS ==========
@@ -1469,7 +1505,7 @@ function renderAttendance(list = attendance) {
   let recentList = list.slice().reverse().slice(0, 50);
   
   if (recentList.length === 0) {
-    tbody.innerHTML = "前进<td colspan='8' style='text-align:center; padding:20px;'>No attendance records for today</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:20px;'>No attendance records for today</td></tr>";
   } else {
     recentList.forEach((a) => {
       let nstpClass = a.nstp === "ROTC" ? "nstp-rotc" : (a.nstp === "CWTS" ? "nstp-cwts" : "nstp-lts");
@@ -2107,14 +2143,14 @@ function viewHistoricalAttendance() {
   } else {
     let html = "<table border='1' style='width:100%; border-collapse:collapse;'><tr><th>Student ID</th><th>Name</th><th>NSTP</th><th>Date</th><th>Time</th><th>Method</th></tr>";
     attendanceHistory.slice().reverse().slice(0, 100).forEach(record => {
-      html += `<tr>
+      html += `运转
         <td>${record.studentID}</td>
         <td>${record.studentName}</td>
         <td>${record.nstp}</td>
         <td>${record.date}</td>
         <td>${record.time}</td>
         <td>${record.method}</td>
-      </tr>`;
+       </tr>`;
     });
     html += "</table>";
     historyDiv.innerHTML = html;
@@ -2227,7 +2263,6 @@ function exportByNSTP() {
 // ========== QR SCANNER FUNCTIONS ==========
 let manualScanner = null;
 let loginScanner = null;
-let searchTimeout;
 
 function startManualScanner() {
   if (!manualScanner) {
