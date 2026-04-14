@@ -5,12 +5,12 @@
 <title>CPSU Smart QR Attendance System - Real-Time Updates</title>
 
 <!-- Libraries -->
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="[unpkg.com](https://unpkg.com/html5-qrcode)"></script>
+<script src="[cdnjs.cloudflare.com](https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js)"></script>
+<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/chart.js)"></script>
+<script src="[cdnjs.cloudflare.com](https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js)"></script>
+<script src="[cdn.sheetjs.com](https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js)"></script>
+<script src="[cdnjs.cloudflare.com](https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js)"></script>
 
 <style>
 * {
@@ -144,33 +144,6 @@ header {
 
 .stat-updated h2 {
   color: #155724;
-}
-
-.campus-location {
-  background: #fff3cd;
-  border: 2px solid #ffc107;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-}
-
-.location-status {
-  display: inline-block;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: bold;
-  margin-left: 10px;
-}
-
-.location-verified {
-  background: #d4edda;
-  color: #155724;
-}
-
-.location-failed {
-  background: #f8d7da;
-  color: #721c24;
 }
 
 .cards {
@@ -463,16 +436,6 @@ table tr:nth-child(even) {
   font-size: 14px;
 }
 
-.manual-login-note {
-  background: #e3f2fd;
-  padding: 15px;
-  border-radius: 5px;
-  margin: 15px 0;
-  font-size: 0.95em;
-  color: #0d47a1;
-  text-align: left;
-}
-
 .pagination {
   display: flex;
   justify-content: center;
@@ -575,15 +538,6 @@ hr {
   cursor: pointer;
 }
 
-.location-preview {
-  background: #e3f2fd;
-  padding: 10px;
-  border-radius: 5px;
-  margin-top: 10px;
-  font-size: 12px;
-  text-align: left;
-}
-
 .filter-bar {
   display: flex;
   gap: 10px;
@@ -676,6 +630,19 @@ canvas {
   font-size: 12px;
   margin-top: 5px;
 }
+
+.password-section {
+  background: #fff3cd;
+  padding: 15px;
+  border-radius: 10px;
+  margin: 20px 0;
+  border: 1px solid #ffc107;
+}
+
+.password-section h4 {
+  margin-top: 0;
+  color: #856404;
+}
 </style>
 </head>
 <body>
@@ -693,44 +660,22 @@ canvas {
 <div id="loginPage">
 <div class="login-box">
 <h2>📱 CPSU Smart Attendance</h2>
-<p class="small-note">📍 Location verification required for attendance</p>
 <p class="small-note">🎓 Student ID Format: CPSU-VIC-2026-XXXX</p>
-
-<!-- Campus Location Info -->
-<div class="campus-location">
-  <strong>🏛️ Campus Location Verification</strong><br>
-  <small>Your location will be verified to ensure you're on campus when marking attendance</small>
-  <div id="locationPreview" class="location-preview" style="display:none;"></div>
-</div>
 
 <!-- LOGIN SCANNER SECTION -->
 <div class="login-scanner-section">
 <div class="camera-icon">📷</div>
-<h3>Option 1: Scan QR Code</h3>
+<h3>Scan Your QR Code to Login</h3>
+<p class="small-note">Position your student QR code in front of the camera</p>
 <div id="loginReader"></div>
 <div id="scanFeedback" class="scan-message" style="display:none;"></div>
-</div>
-
-<!-- Manual Login Option -->
-<div class="manual-login-note">
-<strong>✏️ Option 2: Manual Login</strong><br>
-Type your credentials below. Location will be verified before recording attendance.<br>
-<strong>Student ID Format:</strong> CPSU-VIC-2026-0001, CPSU-VIC-2026-0002, etc.<br>
-<strong>Password:</strong> Provided by the administrator upon enrollment
-</div>
-
-<!-- Login Form -->
-<div id="loginForm">
-<input type="text" id="username" placeholder="Student ID (e.g., CPSU-VIC-2026-0001)" autocomplete="off">
-<input type="password" id="password" placeholder="Password" autocomplete="off">
-<button onclick="loginWithLocation()" id="loginButton">🔑 Login & Verify Location</button>
 </div>
 
 <p id="error" class="error"></p>
 
 <!-- Quick Info -->
-<p class="small-note">👤 Admin: admin / CPSUadmin2026</p>
-<p class="small-note">🎓 Student Example: CPSU-VIC-2026-0001 (password provided by admin)</p>
+<p class="small-note">👤 Admin: Scan admin QR code</p>
+<p class="small-note">🎓 Students: Scan your student QR code</p>
 </div>
 </div>
 
@@ -768,26 +713,24 @@ Type your credentials below. Location will be verified before recording attendan
   <canvas id="attendanceChart"></canvas>
 </div>
 
-<!-- Campus Settings for Admin -->
+<!-- Password Change Section (for all users) -->
+<div class="password-section">
+  <h4>🔐 Change Your Password</h4>
+  <input type="password" id="currentPassword" placeholder="Current Password">
+  <input type="password" id="newPassword" placeholder="New Password">
+  <input type="password" id="confirmPassword" placeholder="Confirm New Password">
+  <button onclick="changeOwnPassword()">🔄 Update Password</button>
+</div>
+
+<!-- Admin Controls -->
 <div id="adminControls" class="admin-only">
 <h3>⚙️ Admin Tools</h3>
-
-<div class="campus-location" style="background:#e3f2fd;">
-<h4>📍 Campus Location Settings</h4>
-<p class="small-note">Set the allowed campus area for attendance verification</p>
-<input type="text" id="campusLat" placeholder="Campus Latitude (e.g., 10.720150)" value="10.720150">
-<input type="text" id="campusLng" placeholder="Campus Longitude (e.g., 122.562106)" value="122.562106">
-<input type="number" id="campusRadius" placeholder="Allowed Radius (meters)" value="500">
-<button onclick="saveCampusLocation()">Save Campus Location</button>
-<button onclick="getCurrentLocation()" style="background:#17a2b8;">📍 Get My Current Location</button>
-<div id="campusLocationStatus"></div>
-</div>
 
 <div style="margin:15px 0;">
 <h4>📥 Import Excel (.xlsx) Class List</h4>
 <p class="small-note">Format: Name, Course, Section, NSTP_Component (ROTC/CWTS/LTS), Password (optional)</p>
 <p class="small-note">Student IDs will be auto-generated as: CPSU-VIC-2026-0001, CPSU-VIC-2026-0002, etc.</p>
-<input type="file" id="excelFile" accept=".xlsx, .xls">
+<input type="file" id="excelFile" accept=".xlsx, .xls" style="display:none;">
 <div style="display:flex; gap:10px; margin-top:10px;">
 <button onclick="document.getElementById('excelFile').click()">Select Excel File</button>
 <button onclick="downloadSampleExcel()">Download Sample Excel</button>
@@ -797,7 +740,7 @@ Type your credentials below. Location will be verified before recording attendan
 <div style="margin:15px 0;">
 <h4>📄 Import CSV File</h4>
 <p class="small-note">Format: Name,Course,Section,NSTP_Component,Password</p>
-<input type="file" id="csvFile" accept=".csv">
+<input type="file" id="csvFile" accept=".csv" style="display:none;">
 <div style="display:flex; gap:10px; margin-top:10px;">
 <button onclick="document.getElementById('csvFile').click()">Select CSV File</button>
 <button onclick="downloadSampleCSV()">Download Sample CSV</button>
@@ -807,7 +750,7 @@ Type your credentials below. Location will be verified before recording attendan
 <div style="margin:15px 0;">
 <h4>📝 Import Word Document</h4>
 <p class="small-note">Format: Name TAB Course TAB Section TAB NSTP_Component TAB Password (one per line)</p>
-<input type="file" id="wordFile" accept=".docx">
+<input type="file" id="wordFile" accept=".docx" style="display:none;">
 <div style="display:flex; gap:10px; margin-top:10px;">
 <button onclick="document.getElementById('wordFile').click()">Select Word File</button>
 </div>
@@ -831,13 +774,11 @@ Type your credentials below. Location will be verified before recording attendan
 <hr>
 <h4>🔐 Manage Student Accounts</h4>
 <button onclick="showStudentPasswords()" style="background:#17a2b8;">👁️ View All Student Passwords</button>
-<button onclick="resetStudentPassword()" style="background:#ff9800;">🔄 Reset Student Password</button>
-<button onclick="deleteAllStudents()" class="danger-btn" style="background:#dc3545;">🗑️ DELETE ALL STUDENTS (Permanent)</button>
-<p class="warning-text">⚠️ Warning: This will permanently remove all students, their accounts, and all attendance records!</p>
+<button onclick="changeStudentPassword()" style="background:#ff9800;">🔄 Change Student Password</button>
 <div id="passwordModal" class="modal" style="display:none;">
   <div class="modal-content">
     <h3>Student Passwords</h3>
-    <div id="passwordList"></div>
+    <div id="passwordList" style="max-height:400px; overflow-y:auto;"></div>
     <button onclick="closePasswordModal()">Close</button>
   </div>
 </div>
@@ -885,13 +826,6 @@ Type your credentials below. Location will be verified before recording attendan
 <div id="manualReader"></div>
 <div id="scanStatus" style="text-align:center; margin:10px; padding:10px;"></div>
 
-<!-- MANUAL ATTENDANCE -->
-<div class="manual">
-<h4>✏️ Manual Attendance Entry</h4>
-<input type="text" id="manualStudentID" placeholder="Enter Student ID (e.g., CPSU-VIC-2026-0001)">
-<button onclick="recordManualAttendanceWithLocation()">Record Attendance (Verify Location)</button>
-</div>
-
 <!-- EXPORT BUTTONS -->
 <div class="export-buttons">
 <button onclick="exportAllQRCodes()" style="background:#4a6da7;">🖨️ Export All QR Codes</button>
@@ -913,7 +847,6 @@ Type your credentials below. Location will be verified before recording attendan
 <th>Date</th>
 <th>Time</th>
 <th>Method</th>
-<th>Location Status</th>
 <th>Action</th>
 </tr>
 </thead>
@@ -931,13 +864,6 @@ function generateStudentID(index) {
     return `CPSU-VIC-2026-${number}`;
 }
 
-// ========== CAMPUS LOCATION CONFIGURATION ==========
-let campusConfig = {
-  latitude: 10.720150,
-  longitude: 122.562106,
-  radius: 500
-};
-
 // ========== DATA STRUCTURES ==========
 let attendance = [];
 let attendanceHistory = [];
@@ -945,6 +871,7 @@ let students = [];
 let users = [];
 let currentRole = null;
 let currentUserID = null;
+let currentUsername = null;
 let currentNSTPFilter = "all";
 let currentStudentData = null;
 
@@ -974,13 +901,10 @@ function loadAllData() {
       users = JSON.parse(savedUsers);
     } else {
       users = [
-        { username: "admin", password: "CPSUadmin2026", role: "Admin", studentId: null }
+        { username: "ADMIN-QR-001", password: "CPSUadmin2026", role: "Admin", studentId: null }
       ];
       localStorage.setItem("users", JSON.stringify(users));
     }
-    
-    let savedConfig = localStorage.getItem("campusConfig");
-    if (savedConfig) campusConfig = JSON.parse(savedConfig);
     
   } catch(e) {
     console.error("Error loading data:", e);
@@ -1021,26 +945,6 @@ function saveAllData() {
   localStorage.setItem("attendance", JSON.stringify(attendance));
   localStorage.setItem("attendanceHistory", JSON.stringify(attendanceHistory));
   localStorage.setItem("users", JSON.stringify(users));
-  localStorage.setItem("campusConfig", JSON.stringify(campusConfig));
-}
-
-// ========== DELETE ALL STUDENTS FUNCTION ==========
-function deleteAllStudents() {
-  if (confirm("⚠️ DANGER: This will permanently delete ALL students, their user accounts, and ALL attendance records (both today and history). This action CANNOT be undone. Are you ABSOLUTELY sure?")) {
-    students = [];
-    attendance = [];
-    attendanceHistory = [];
-    users = users.filter(u => u.role === "Admin");
-    saveAllData();
-    localStorage.setItem("lastResetDate", new Date().toLocaleDateString());
-    renderStudents();
-    renderAttendance();
-    updateStats();
-    updateNSTPStats();
-    updateChart();
-    showMessage("✅ All students, accounts, and attendance records have been permanently deleted.", true);
-    if (attendanceChart) { attendanceChart.data.datasets[0].data = []; attendanceChart.update(); }
-  }
 }
 
 // ========== REAL-TIME UPDATE FUNCTIONS ==========
@@ -1049,7 +953,7 @@ function startRealtimeUpdates() {
   
   realtimeInterval = setInterval(() => {
     checkForUpdates();
-  }, 2000); // Check every 2 seconds
+  }, 2000);
 }
 
 function stopRealtimeUpdates() {
@@ -1060,15 +964,12 @@ function stopRealtimeUpdates() {
 }
 
 function checkForUpdates() {
-  // Get current data
   let currentAttendance = JSON.parse(localStorage.getItem("attendance")) || [];
   let currentStudents = JSON.parse(localStorage.getItem("students")) || [];
   
-  // Create hashes to compare
   let newAttendanceHash = JSON.stringify(currentAttendance);
   let newStudentsHash = JSON.stringify(currentStudents);
   
-  // Check if attendance changed
   if (newAttendanceHash !== lastAttendanceHash) {
     let oldCount = attendance.length;
     let newCount = currentAttendance.length;
@@ -1076,7 +977,6 @@ function checkForUpdates() {
     attendance = currentAttendance;
     lastAttendanceHash = newAttendanceHash;
     
-    // Find new records
     if (newCount > oldCount && oldCount > 0) {
       let newRecords = currentAttendance.slice(oldCount);
       newRecords.forEach(record => {
@@ -1085,7 +985,6 @@ function checkForUpdates() {
       });
     }
     
-    // Update UI
     renderAttendance();
     updateStats();
     updateChart();
@@ -1093,7 +992,6 @@ function checkForUpdates() {
     highlightStatCard("statToday");
   }
   
-  // Check if students changed
   if (newStudentsHash !== lastStudentsHash) {
     students = currentStudents;
     lastStudentsHash = newStudentsHash;
@@ -1207,7 +1105,6 @@ function initChart() {
 function updateChart() {
   if (!attendanceChart) return;
   
-  // Group attendance by hour
   let hourlyData = {};
   for (let i = 0; i < 24; i++) {
     hourlyData[i] = 0;
@@ -1230,102 +1127,8 @@ function updateChart() {
   attendanceChart.update();
 }
 
-// ========== LOCATION VERIFICATION FUNCTIONS ==========
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371e3;
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
-  
-  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  
-  return R * c;
-}
-
-function verifyLocation(position) {
-  if (!position) return { verified: false, distance: null, message: "No location data" };
-  
-  let distance = calculateDistance(
-    position.coords.latitude,
-    position.coords.longitude,
-    campusConfig.latitude,
-    campusConfig.longitude
-  );
-  
-  let verified = distance <= campusConfig.radius;
-  
-  return {
-    verified: verified,
-    distance: Math.round(distance),
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude,
-    message: verified ? 
-      `✅ On campus (${Math.round(distance)}m from center)` : 
-      `❌ Off campus (${Math.round(distance)}m from center, allowed: ${campusConfig.radius}m)`
-  };
-}
-
-function getLocationForAttendance() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("Geolocation not supported"));
-      return;
-    }
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => resolve(position),
-      (error) => reject(error),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  });
-}
-
-function saveCampusLocation() {
-  let lat = parseFloat(document.getElementById("campusLat").value);
-  let lng = parseFloat(document.getElementById("campusLng").value);
-  let radius = parseFloat(document.getElementById("campusRadius").value);
-  
-  if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
-    showMessage("Invalid location values", false);
-    return;
-  }
-  
-  campusConfig = { latitude: lat, longitude: lng, radius: radius };
-  saveAllData();
-  
-  showMessage("✅ Campus location saved successfully!", true);
-  document.getElementById("campusLocationStatus").innerHTML = 
-    `<span style="color:green;">📍 Campus set to: ${lat}, ${lng} (${radius}m radius)</span>`;
-}
-
-function getCurrentLocation() {
-  if (!navigator.geolocation) {
-    showMessage("Geolocation not supported by your browser", false);
-    return;
-  }
-  
-  showLoading(true);
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      document.getElementById("campusLat").value = position.coords.latitude;
-      document.getElementById("campusLng").value = position.coords.longitude;
-      showMessage(`✅ Current location captured: ${position.coords.latitude}, ${position.coords.longitude}`, true);
-      showLoading(false);
-    },
-    (error) => {
-      showMessage("Error getting location: " + error.message, false);
-      showLoading(false);
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
-}
-
 // ========== ATTENDANCE FUNCTIONS ==========
-function recordAttendanceWithLocation(studentID, method, locationData) {
+function recordAttendance(studentID, method) {
   let student = students.find(s => s.studentID === studentID);
   if (!student) return { success: false, message: "Student not found" };
 
@@ -1336,101 +1139,119 @@ function recordAttendanceWithLocation(studentID, method, locationData) {
   let existingRecord = attendance.find(a => a.studentID === studentID && a.date === today);
   if (existingRecord) return { success: false, message: "Already recorded today" };
 
-  let locationVerification = null;
-  let locationVerified = false;
-  let locationDetails = null;
-  
-  if (locationData) {
-    locationVerification = verifyLocation(locationData);
-    locationVerified = locationVerification.verified;
-    locationDetails = {
-      latitude: locationVerification.latitude,
-      longitude: locationVerification.longitude,
-      distance: locationVerification.distance,
-      verified: locationVerified
-    };
-  }
-  
-  if (!locationVerified && currentRole !== "Admin") {
-    return { 
-      success: false, 
-      message: locationVerification ? locationVerification.message : "Location verification failed",
-      locationDetails: locationDetails
-    };
-  }
-
   attendance.push({
     studentID: studentID,
     studentName: student.name,
     nstp: student.nstp,
     date: today,
     time: timeString,
-    method: method,
-    locationVerified: locationVerified,
-    locationDistance: locationDetails?.distance || null,
-    locationLat: locationDetails?.latitude || null,
-    locationLng: locationDetails?.longitude || null
+    method: method
   });
 
   saveAllData();
   
-  // Trigger real-time update for other admins
   if (currentRole === "Admin") {
     showRealtimeToast(`📝 ${student.name} marked attendance via ${method}`);
   }
   
   return { 
     success: true, 
-    message: `Attendance recorded for ${student.name}`,
-    locationVerified: locationVerified,
-    locationDetails: locationDetails
+    message: `Attendance recorded for ${student.name}`
   };
 }
 
-// ========== LOGIN FUNCTIONS ==========
-async function loginWithLocation() {
-  let u = document.getElementById("username").value.trim();
-  let p = document.getElementById("password").value.trim();
+// ========== PASSWORD FUNCTIONS ==========
+function changeOwnPassword() {
+  let currentPwd = document.getElementById("currentPassword").value;
+  let newPwd = document.getElementById("newPassword").value;
+  let confirmPwd = document.getElementById("confirmPassword").value;
   
-  if (!u || !p) {
-    document.getElementById("error").innerText = "Please enter username and password";
+  if (!currentPwd || !newPwd || !confirmPwd) {
+    showMessage("Please fill all password fields", false);
     return;
   }
   
-  let user = users.find(x => x.username === u && x.password === p);
+  if (newPwd !== confirmPwd) {
+    showMessage("New passwords do not match", false);
+    return;
+  }
+  
+  if (newPwd.length < 4) {
+    showMessage("Password must be at least 4 characters", false);
+    return;
+  }
+  
+  let userIndex = users.findIndex(u => u.username === currentUsername);
+  if (userIndex === -1) {
+    showMessage("User not found", false);
+    return;
+  }
+  
+  if (users[userIndex].password !== currentPwd) {
+    showMessage("Current password is incorrect", false);
+    return;
+  }
+  
+  users[userIndex].password = newPwd;
+  saveAllData();
+  
+  document.getElementById("currentPassword").value = "";
+  document.getElementById("newPassword").value = "";
+  document.getElementById("confirmPassword").value = "";
+  
+  showMessage("✅ Password changed successfully!", true);
+}
+
+function changeStudentPassword() {
+  let studentID = prompt("Enter Student ID to change password:");
+  if (!studentID) return;
+  
+  let student = students.find(s => s.studentID === studentID);
+  if (!student) {
+    showMessage("Student not found", false);
+    return;
+  }
+  
+  let newPassword = prompt(`Enter new password for ${student.name}:`);
+  if (!newPassword) return;
+  
+  if (newPassword.length < 4) {
+    showMessage("Password must be at least 4 characters", false);
+    return;
+  }
+  
+  let userIndex = users.findIndex(u => u.studentId === studentID);
+  if (userIndex !== -1) {
+    users[userIndex].password = newPassword;
+    saveAllData();
+    showMessage(`✅ Password for ${student.name} changed successfully!`, true);
+  } else {
+    showMessage("User account not found", false);
+  }
+}
+
+// ========== LOGIN FUNCTIONS ==========
+function loginWithQR(scannedID) {
+  let user = users.find(x => x.username === scannedID);
   
   if (!user) {
-    document.getElementById("error").innerText = "Invalid credentials";
+    showLoginFeedback("❌ Invalid QR Code. User not found.", false);
     return;
   }
   
   currentRole = user.role;
   currentUserID = user.studentId || null;
+  currentUsername = user.username;
   
   if (currentUserID) {
     currentStudentData = students.find(s => s.studentID === currentUserID);
   }
   
+  // Record attendance for students
   if (currentRole !== "Admin" && currentUserID) {
-    try {
-      showLoading(true);
-      let locationData = await getLocationForAttendance();
-      let result = recordAttendanceWithLocation(currentUserID, "Login", locationData);
-      showLoading(false);
-      
-      if (!result.success && !result.message.includes("Already recorded")) {
-        document.getElementById("error").innerText = result.message;
-        return;
-      }
-      
-      if(result.success) {
-        showMessage(result.message + (result.locationVerified ? " ✅ On Campus" : " ⚠️ Location Override"), result.locationVerified);
-      }
-      
-    } catch (error) {
-      showLoading(false);
-      document.getElementById("error").innerText = "Location verification failed: " + error.message;
-      return;
+    let result = recordAttendance(currentUserID, "QR Login");
+    if (result.success) {
+      showMessage(result.message, true);
     }
   }
   
@@ -1441,17 +1262,11 @@ async function loginWithLocation() {
     document.getElementById("adminControls").style.display = "none";
   } else {
     document.getElementById("adminControls").style.display = "block";
-    document.getElementById("campusLat").value = campusConfig.latitude;
-    document.getElementById("campusLng").value = campusConfig.longitude;
-    document.getElementById("campusRadius").value = campusConfig.radius;
     
-    // Initialize chart for admin
     if (!attendanceChart) {
       initChart();
     }
     updateChart();
-    
-    // Start real-time updates for admin
     startRealtimeUpdates();
   }
   
@@ -1460,7 +1275,7 @@ async function loginWithLocation() {
   updateStats();
   stopLoginScanner();
   
-  let student = students.find(s => s.studentID === u);
+  let student = students.find(s => s.studentID === scannedID);
   if (student) {
     showMessage(`👋 Welcome ${student.name}! (NSTP: ${student.nstp})`, true);
   } else if (currentRole === "Admin") {
@@ -1468,32 +1283,16 @@ async function loginWithLocation() {
   }
 }
 
-async function recordManualAttendanceWithLocation() {
-  let studentID = document.getElementById("manualStudentID").value.trim();
-  if (!studentID) {
-    showScanStatus("❌ Please enter a Student ID", false);
-    return;
-  }
+function showLoginFeedback(message, success) {
+  let feedbackDiv = document.getElementById("scanFeedback");
+  feedbackDiv.innerHTML = message;
+  feedbackDiv.style.display = "block";
+  feedbackDiv.style.backgroundColor = success ? "#d4edda" : "#f8d7da";
+  feedbackDiv.style.color = success ? "#155724" : "#721c24";
   
-  try {
-    showLoading(true);
-    let locationData = await getLocationForAttendance();
-    let result = recordAttendanceWithLocation(studentID, "Manual", locationData);
-    showLoading(false);
-    
-    if (result.success) {
-      document.getElementById("manualStudentID").value = "";
-      showScanStatus(result.message + (result.locationVerified ? " ✅ On Campus" : " ⚠️ Admin Override"), result.locationVerified);
-      renderAttendance();
-      updateStats();
-      updateChart();
-    } else {
-      showScanStatus(result.message, false);
-    }
-  } catch (error) {
-    showLoading(false);
-    showScanStatus("Location verification failed: " + error.message, false);
-  }
+  setTimeout(() => {
+    feedbackDiv.style.display = "none";
+  }, 3000);
 }
 
 // ========== RENDER FUNCTIONS ==========
@@ -1505,13 +1304,10 @@ function renderAttendance(list = attendance) {
   let recentList = list.slice().reverse().slice(0, 50);
   
   if (recentList.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='8' style='text-align:center; padding:20px;'>No attendance records for today</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center; padding:20px;'>No attendance records for today</td></tr>";
   } else {
     recentList.forEach((a) => {
       let nstpClass = a.nstp === "ROTC" ? "nstp-rotc" : (a.nstp === "CWTS" ? "nstp-cwts" : "nstp-lts");
-      let locationStatus = a.locationVerified ? 
-        '<span class="location-badge verified-badge">✅ On Campus</span>' : 
-        (a.locationDistance ? `<span class="location-badge unverified-badge">📍 ${a.locationDistance}m away</span>` : '<span class="location-badge unverified-badge">⚠️ Unverified</span>');
       
       let delBtn = (currentRole === "Admin") ? 
         `<button onclick="deleteAttendance('${a.studentID}', '${a.date}')" style="background:#dc3545; padding:5px 10px;">🗑️</button>` : "";
@@ -1524,7 +1320,6 @@ function renderAttendance(list = attendance) {
           <td>${a.date}</td>
           <td>${a.time}</td>
           <td>${a.method}</td>
-          <td class="location-cell">${locationStatus}</td>
           <td>${delBtn}</td>
         </tr>
       `;
@@ -1533,8 +1328,7 @@ function renderAttendance(list = attendance) {
   
   let countDiv = document.getElementById("attendanceCount");
   if (countDiv) {
-    let verifiedCount = attendance.filter(a => a.locationVerified === true).length;
-    countDiv.innerHTML = `Showing ${list.length} records for today (${verifiedCount} verified on campus)`;
+    countDiv.innerHTML = `Showing ${list.length} records for today`;
   }
 }
 
@@ -1736,7 +1530,6 @@ function exportAllQRCodes() {
     return;
   }
   
-  // Create a simple download for each QR
   let zip = new JSZip();
   let promises = [];
   
@@ -2092,12 +1885,17 @@ function showStudentPasswords() {
   }
   
   let passwordListHtml = "<table border='1' style='width:100%; border-collapse:collapse;'>";
-  passwordListHtml += "<tr><th>Student ID</th><th>Name</th><th>Password</th></tr>";
+  passwordListHtml += "<tr><th>Student ID</th><th>Name</th><th>Password</th><th>Action</th></tr>";
   
   students.forEach(student => {
     let user = users.find(u => u.studentId === student.studentID);
     let password = user ? user.password : "Not set";
-    passwordListHtml += `<tr><td>${student.studentID}</td><td>${student.name}</td><td><code>${password}</code></td></tr>`;
+    passwordListHtml += `<tr>
+      <td>${student.studentID}</td>
+      <td>${student.name}</td>
+      <td><code>${password}</code></td>
+      <td><button onclick="editPasswordInline('${student.studentID}')" style="padding:5px 10px; background:#ff9800;">Edit</button></td>
+    </tr>`;
   });
   
   passwordListHtml += "</table>";
@@ -2106,31 +1904,29 @@ function showStudentPasswords() {
   document.getElementById("passwordModal").style.display = "flex";
 }
 
-function closePasswordModal() {
-  document.getElementById("passwordModal").style.display = "none";
-}
-
-function resetStudentPassword() {
-  let studentID = prompt("Enter Student ID to reset password:");
-  if (!studentID) return;
-  
+function editPasswordInline(studentID) {
   let student = students.find(s => s.studentID === studentID);
-  if (!student) {
-    showMessage("Student not found", false);
+  if (!student) return;
+  
+  let newPassword = prompt(`Enter new password for ${student.name}:`);
+  if (!newPassword) return;
+  
+  if (newPassword.length < 4) {
+    showMessage("Password must be at least 4 characters", false);
     return;
   }
-  
-  let idNumber = studentID.split('-').pop();
-  let newPassword = `cpsu${idNumber}`;
   
   let userIndex = users.findIndex(u => u.studentId === studentID);
   if (userIndex !== -1) {
     users[userIndex].password = newPassword;
     saveAllData();
-    showMessage(`✅ Password for ${student.name} reset to: ${newPassword}`, true);
-  } else {
-    showMessage("User account not found", false);
+    showStudentPasswords(); // Refresh the list
+    showMessage(`✅ Password updated for ${student.name}`, true);
   }
+}
+
+function closePasswordModal() {
+  document.getElementById("passwordModal").style.display = "none";
 }
 
 // ========== OTHER FUNCTIONS ==========
@@ -2143,7 +1939,7 @@ function viewHistoricalAttendance() {
   } else {
     let html = "<table border='1' style='width:100%; border-collapse:collapse;'><tr><th>Student ID</th><th>Name</th><th>NSTP</th><th>Date</th><th>Time</th><th>Method</th></tr>";
     attendanceHistory.slice().reverse().slice(0, 100).forEach(record => {
-      html += `运转
+      html += `<tr>
         <td>${record.studentID}</td>
         <td>${record.studentName}</td>
         <td>${record.nstp}</td>
@@ -2188,11 +1984,11 @@ function exportAttendance() {
     return;
   }
   
-  let csv = "StudentID,Name,NSTP_Component,Date,Time,Method,LocationVerified,DistanceFromCampus(m),Latitude,Longitude\n";
+  let csv = "StudentID,Name,NSTP_Component,Date,Time,Method\n";
   
   attendance.forEach(a => {
     let escapedName = a.studentName.includes(',') ? `"${a.studentName}"` : a.studentName;
-    csv += `${a.studentID},${escapedName},${a.nstp},${a.date},${a.time},${a.method},${a.locationVerified ? "Yes" : "No"},${a.locationDistance || ""},${a.locationLat || ""},${a.locationLng || ""}\n`;
+    csv += `${a.studentID},${escapedName},${a.nstp},${a.date},${a.time},${a.method}\n`;
   });
   
   let blob = new Blob([csv], { type: "text/csv" });
@@ -2213,12 +2009,12 @@ function exportAllAttendance() {
     return;
   }
   
-  let csv = "StudentID,Name,NSTP_Component,Date,Time,Method,LocationVerified,DistanceFromCampus(m),Latitude,Longitude\n";
+  let csv = "StudentID,Name,NSTP_Component,Date,Time,Method\n";
   
   allRecords.forEach(a => {
     let date = a.archivedDate || a.date;
     let escapedName = a.studentName.includes(',') ? `"${a.studentName}"` : a.studentName;
-    csv += `${a.studentID},${escapedName},${a.nstp},${date},${a.time},${a.method},${a.locationVerified ? "Yes" : "No"},${a.locationDistance || ""},${a.locationLat || ""},${a.locationLng || ""}\n`;
+    csv += `${a.studentID},${escapedName},${a.nstp},${date},${a.time},${a.method}\n`;
   });
   
   let blob = new Blob([csv], { type: "text/csv" });
@@ -2274,24 +2070,19 @@ function startManualScanner() {
   manualScanner.start(
     { facingMode: "environment" },
     config,
-    async (decodedText) => {
+    (decodedText) => {
       stopManualScanner();
       let studentID = decodedText.trim();
       
-      try {
-        let locationData = await getLocationForAttendance();
-        let result = recordAttendanceWithLocation(studentID, "QR Scan", locationData);
-        
-        if (result.success) {
-          showScanStatus(result.message + (result.locationVerified ? " ✅ On Campus" : " ⚠️ Admin Override"), result.locationVerified);
-          renderAttendance();
-          updateStats();
-          updateChart();
-        } else {
-          showScanStatus(result.message, false);
-        }
-      } catch (error) {
-        showScanStatus("Location verification failed: " + error.message, false);
+      let result = recordAttendance(studentID, "QR Scan");
+      
+      if (result.success) {
+        showScanStatus(result.message, true);
+        renderAttendance();
+        updateStats();
+        updateChart();
+      } else {
+        showScanStatus(result.message, false);
       }
       
       setTimeout(() => { startManualScanner(); }, 3000);
@@ -2321,9 +2112,8 @@ function startLoginScanner() {
     { facingMode: "environment" }, 
     { fps: 10, qrbox: { width: 250, height: 250 } }, 
     (text) => { 
-      document.getElementById("username").value = text; 
-      document.getElementById("password").focus();
-      showMessage("✅ QR Code scanned! Enter password to login.", true);
+      stopLoginScanner();
+      loginWithQR(text.trim());
     },
     () => {}
   ).catch(err => {
