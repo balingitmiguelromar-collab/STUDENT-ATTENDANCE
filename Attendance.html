@@ -5,12 +5,12 @@
 <title>CPSU Smart QR Attendance System - Real-Time Updates</title>
 
 <!-- Libraries -->
-<script src="[unpkg.com](https://unpkg.com/html5-qrcode)"></script>
-<script src="[cdnjs.cloudflare.com](https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js)"></script>
-<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/chart.js)"></script>
-<script src="[cdnjs.cloudflare.com](https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js)"></script>
-<script src="[cdn.sheetjs.com](https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js)"></script>
-<script src="[cdnjs.cloudflare.com](https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js)"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
 * {
@@ -305,30 +305,6 @@ table tr:nth-child(even) {
   100% { background-color: transparent; }
 }
 
-.location-cell {
-  font-size: 12px;
-  max-width: 200px;
-  word-break: break-all;
-}
-
-.location-badge {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: bold;
-}
-
-.verified-badge {
-  background: #d4edda;
-  color: #155724;
-}
-
-.unverified-badge {
-  background: #f8d7da;
-  color: #721c24;
-}
-
 #reader, #loginReader, #manualReader {
   width: 100%;
   max-width: 400px;
@@ -434,6 +410,16 @@ table tr:nth-child(even) {
   margin: 10px 0;
   border-radius: 5px;
   font-size: 14px;
+}
+
+.manual-login-note {
+  background: #e3f2fd;
+  padding: 15px;
+  border-radius: 5px;
+  margin: 15px 0;
+  font-size: 0.95em;
+  color: #0d47a1;
+  text-align: left;
 }
 
 .pagination {
@@ -665,17 +651,31 @@ canvas {
 <!-- LOGIN SCANNER SECTION -->
 <div class="login-scanner-section">
 <div class="camera-icon">📷</div>
-<h3>Scan Your QR Code to Login</h3>
-<p class="small-note">Position your student QR code in front of the camera</p>
+<h3>Option 1: Scan QR Code to Login</h3>
 <div id="loginReader"></div>
 <div id="scanFeedback" class="scan-message" style="display:none;"></div>
+</div>
+
+<!-- Manual Login Option -->
+<div class="manual-login-note">
+<strong>✏️ Option 2: Manual Login</strong><br>
+Type your credentials below.<br>
+<strong>Student ID Format:</strong> CPSU-VIC-2026-0001, CPSU-VIC-2026-0002, etc.<br>
+<strong>Password:</strong> Provided by the administrator upon enrollment
+</div>
+
+<!-- Login Form -->
+<div id="loginForm">
+<input type="text" id="username" placeholder="Student ID (e.g., CPSU-VIC-2026-0001)" autocomplete="off">
+<input type="password" id="password" placeholder="Password" autocomplete="off">
+<button onclick="manualLogin()">🔑 Login</button>
 </div>
 
 <p id="error" class="error"></p>
 
 <!-- Quick Info -->
-<p class="small-note">👤 Admin: Scan admin QR code</p>
-<p class="small-note">🎓 Students: Scan your student QR code</p>
+<p class="small-note">👤 Admin: ADMIN-QR-001 / CPSUadmin2026</p>
+<p class="small-note">🎓 Student Example: CPSU-VIC-2026-0001 (password provided by admin)</p>
 </div>
 </div>
 
@@ -774,7 +774,7 @@ canvas {
 <hr>
 <h4>🔐 Manage Student Accounts</h4>
 <button onclick="showStudentPasswords()" style="background:#17a2b8;">👁️ View All Student Passwords</button>
-<button onclick="changeStudentPassword()" style="background:#ff9800;">🔄 Change Student Password</button>
+<button onclick="resetStudentPassword()" style="background:#ff9800;">🔄 Reset Student Password</button>
 <div id="passwordModal" class="modal" style="display:none;">
   <div class="modal-content">
     <h3>Student Passwords</h3>
@@ -1202,35 +1202,26 @@ function changeOwnPassword() {
   showMessage("✅ Password changed successfully!", true);
 }
 
-function changeStudentPassword() {
-  let studentID = prompt("Enter Student ID to change password:");
-  if (!studentID) return;
+// ========== LOGIN FUNCTIONS ==========
+function manualLogin() {
+  let username = document.getElementById("username").value.trim();
+  let password = document.getElementById("password").value.trim();
   
-  let student = students.find(s => s.studentID === studentID);
-  if (!student) {
-    showMessage("Student not found", false);
+  if (!username || !password) {
+    document.getElementById("error").innerText = "Please enter username and password";
     return;
   }
   
-  let newPassword = prompt(`Enter new password for ${student.name}:`);
-  if (!newPassword) return;
+  let user = users.find(u => u.username === username && u.password === password);
   
-  if (newPassword.length < 4) {
-    showMessage("Password must be at least 4 characters", false);
+  if (!user) {
+    document.getElementById("error").innerText = "Invalid credentials";
     return;
   }
   
-  let userIndex = users.findIndex(u => u.studentId === studentID);
-  if (userIndex !== -1) {
-    users[userIndex].password = newPassword;
-    saveAllData();
-    showMessage(`✅ Password for ${student.name} changed successfully!`, true);
-  } else {
-    showMessage("User account not found", false);
-  }
+  completeLogin(user);
 }
 
-// ========== LOGIN FUNCTIONS ==========
 function loginWithQR(scannedID) {
   let user = users.find(x => x.username === scannedID);
   
@@ -1239,6 +1230,10 @@ function loginWithQR(scannedID) {
     return;
   }
   
+  completeLogin(user);
+}
+
+function completeLogin(user) {
   currentRole = user.role;
   currentUserID = user.studentId || null;
   currentUsername = user.username;
@@ -1249,7 +1244,7 @@ function loginWithQR(scannedID) {
   
   // Record attendance for students
   if (currentRole !== "Admin" && currentUserID) {
-    let result = recordAttendance(currentUserID, "QR Login");
+    let result = recordAttendance(currentUserID, "Login");
     if (result.success) {
       showMessage(result.message, true);
     }
@@ -1275,7 +1270,7 @@ function loginWithQR(scannedID) {
   updateStats();
   stopLoginScanner();
   
-  let student = students.find(s => s.studentID === scannedID);
+  let student = students.find(s => s.studentID === currentUsername);
   if (student) {
     showMessage(`👋 Welcome ${student.name}! (NSTP: ${student.nstp})`, true);
   } else if (currentRole === "Admin") {
@@ -1920,13 +1915,36 @@ function editPasswordInline(studentID) {
   if (userIndex !== -1) {
     users[userIndex].password = newPassword;
     saveAllData();
-    showStudentPasswords(); // Refresh the list
+    showStudentPasswords();
     showMessage(`✅ Password updated for ${student.name}`, true);
   }
 }
 
 function closePasswordModal() {
   document.getElementById("passwordModal").style.display = "none";
+}
+
+function resetStudentPassword() {
+  let studentID = prompt("Enter Student ID to reset password:");
+  if (!studentID) return;
+  
+  let student = students.find(s => s.studentID === studentID);
+  if (!student) {
+    showMessage("Student not found", false);
+    return;
+  }
+  
+  let idNumber = studentID.split('-').pop();
+  let newPassword = `cpsu${idNumber}`;
+  
+  let userIndex = users.findIndex(u => u.studentId === studentID);
+  if (userIndex !== -1) {
+    users[userIndex].password = newPassword;
+    saveAllData();
+    showMessage(`✅ Password for ${student.name} reset to: ${newPassword}`, true);
+  } else {
+    showMessage("User account not found", false);
+  }
 }
 
 // ========== OTHER FUNCTIONS ==========
@@ -2112,8 +2130,9 @@ function startLoginScanner() {
     { facingMode: "environment" }, 
     { fps: 10, qrbox: { width: 250, height: 250 } }, 
     (text) => { 
-      stopLoginScanner();
-      loginWithQR(text.trim());
+      document.getElementById("username").value = text;
+      document.getElementById("password").focus();
+      showMessage("✅ QR Code scanned! Enter password to login.", true);
     },
     () => {}
   ).catch(err => {
