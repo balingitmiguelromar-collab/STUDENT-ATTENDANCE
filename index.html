@@ -1,5 +1,252 @@
 <!DOCTYPE html>
+<html><!DOCTYPE html>
 <html>
+<head>
+<meta charset="UTF-8">
+<title>CPSU Smart QR Attendance | Enhanced System</title>
+
+<!-- Libraries -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+* { box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f0f7f0; }
+#loginPage { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; background: linear-gradient(135deg, #0b7a2a 0%, #0a5c20 100%); }
+.login-box { background: white; padding: 40px; border-radius: 32px; width: 100%; max-width: 500px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+input, select { width: 100%; padding: 14px 18px; margin: 10px 0; border-radius: 50px; border: 2px solid #e0e7e0; font-size: 15px; transition: 0.2s; background: #fafcfa; }
+input:focus, select:focus { outline: none; border-color: #0b7a2a; box-shadow: 0 0 0 3px rgba(11,122,42,0.2); }
+button { background: linear-gradient(95deg, #0b7a2a, #0e8a30); color: white; border: none; padding: 14px; margin: 10px 0; border-radius: 50px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+button:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(11,122,42,0.3); background: linear-gradient(95deg, #0e8a30, #0b7a2a); }
+.logout { position: absolute; top: 20px; right: 20px; background: linear-gradient(95deg, #dc3545, #b02a37); width: auto; padding: 10px 28px; border-radius: 50px; }
+.error { color: #dc3545; margin: 10px 0; font-size: 14px; }
+#dashboard { display: none; background: #f0f7f0; }
+header { background: linear-gradient(135deg, #0b7a2a, #064e1a); color: white; text-align: center; padding: 30px; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.container { width: 95%; max-width: 1400px; margin: 0 auto; padding: 20px; }
+.stats { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
+.stat { flex: 1; min-width: 180px; background: white; padding: 20px; border-radius: 24px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-bottom: 4px solid #0b7a2a; transition: all 0.2s; }
+.stat:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
+.stat h2 { margin: 12px 0 0; color: #0b7a2a; font-size: 34px; font-weight: 800; }
+.campus-location { background: linear-gradient(135deg, #fff8e7, #fff3d4); border: 1px solid #ffdf8c; padding: 18px; border-radius: 24px; margin-bottom: 20px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; margin: 25px 0; }
+.card { background: white; padding: 20px; border-radius: 28px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.06); transition: all 0.25s; position: relative; border: 1px solid #e8f0e8; cursor: pointer; }
+.card:hover { transform: translateY(-6px); box-shadow: 0 20px 35px rgba(0,0,0,0.1); border-color: #0b7a2a; }
+.nstp-badge { display: inline-block; padding: 6px 16px; border-radius: 50px; font-size: 12px; font-weight: bold; }
+.nstp-rotc { background: #ffc107; color: #5d4502; }
+.nstp-cwts { background: #17a2b8; color: white; }
+.nstp-lts { background: #28a745; color: white; }
+.id-badge { background: #eef2ff; padding: 6px 14px; border-radius: 50px; font-family: monospace; font-weight: bold; font-size: 13px; }
+.qr-container { margin: 15px 0; padding: 10px; background: #fafbfc; border-radius: 20px; display: flex; justify-content: center; }
+.student-actions button { margin: 5px; width: auto; padding: 8px 18px; font-size: 12px; border-radius: 50px; }
+.realtime-badge { position: absolute; top: 12px; right: 12px; background: #28a745; color: white; padding: 4px 12px; border-radius: 50px; font-size: 10px; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { opacity: 0.7; } 100% { opacity: 1; } }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+table th { background: #0b7a2a; color: white; padding: 14px; font-weight: 600; }
+table td { border: 1px solid #e8f0e8; padding: 12px; text-align: center; }
+.location-badge { padding: 4px 14px; border-radius: 50px; font-size: 11px; font-weight: bold; }
+.verified-badge { background: #d4edda; color: #155724; }
+.unverified-badge { background: #f8d7da; color: #721c24; }
+.admin-only { background: white; padding: 28px; border-radius: 32px; margin: 25px 0; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border: 1px solid #e0ece0; }
+.scanner-controls { display: flex; gap: 15px; justify-content: center; margin: 20px 0; }
+.scanner-controls button { width: auto; padding: 12px 32px; }
+.login-status { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 32px; border-radius: 60px; z-index: 9999; display: none; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+.pagination { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
+.pagination button { width: auto; padding: 10px 30px; }
+.loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 20px 40px; background: rgba(0,0,0,0.85); color: white; border-radius: 60px; z-index: 10000; font-weight: bold; }
+.component-tabs { display: flex; gap: 12px; margin: 20px 0 10px; flex-wrap: wrap; justify-content: center; }
+.component-tab { background: #e8f0e8; color: #2c4a2c; padding: 12px 32px; border-radius: 60px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; font-size: 14px; }
+.component-tab.active { background: #0b7a2a; color: white; box-shadow: 0 4px 12px rgba(11,122,42,0.3); }
+.filter-bar { display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
+.filter-bar input { flex: 1; min-width: 220px; border-radius: 50px; }
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+.modal-content { background: white; padding: 32px; border-radius: 40px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
+.realtime-toast { position: fixed; bottom: 100px; right: 25px; background: #0b7a2a; color: white; padding: 14px 24px; border-radius: 60px; font-size: 14px; z-index: 1100; animation: slideInRight 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+.chart-container { background: white; padding: 20px; border-radius: 28px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.live-indicator { position: fixed; bottom: 25px; right: 25px; background: #0b7a2a; color: white; padding: 12px 20px; border-radius: 60px; font-size: 13px; z-index: 1000; animation: pulse 2s infinite; cursor: pointer; font-weight: bold; }
+.attendance-summary { background: white; padding: 20px; border-radius: 28px; margin: 20px 0; display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-around; }
+.summary-card { text-align: center; padding: 15px 25px; background: #f8fbf8; border-radius: 24px; flex: 1; min-width: 140px; }
+.summary-card h4 { margin: 0 0 8px; color: #333; }
+.summary-card .percent { font-size: 28px; font-weight: bold; color: #0b7a2a; }
+.bulk-print-btn { background: #6f42c1; margin-top: 10px; }
+.profile-attendance-list { max-height: 300px; overflow-y: auto; }
+</style>
+</head>
+<body>
+
+<div id="loadingIndicator" class="loading">Loading...</div>
+<div id="loginStatusMessage" class="login-status"></div>
+<div id="liveIndicator" class="live-indicator" onclick="showRealtimeStatus()">🔴 Live Active | Last: <span id="lastUpdateTime">-</span></div>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+<div class="login-box">
+<h2 style="color:#0b7a2a;">🎓 CPSU Smart Attendance</h2>
+<p class="small-note" style="color:#666;">📍 Victorias Campus • Location verification enabled</p>
+<div class="campus-location"><strong>🏛️ Campus Geo-Fencing Active</strong><br><small>Location must be within campus perimeter</small></div>
+<div class="login-scanner-section" style="margin:20px 0;"><div class="camera-icon" style="font-size:2rem;">📷</div><h3>📱 Option 1: Scan QR Code</h3><div id="loginReader"></div></div>
+<div class="manual-login-note" style="background:#e8f0fe; padding:16px; border-radius:20px;"><strong>✏️ Option 2: Manual Sign in</strong><br>Use Student ID & password. Location verified in real-time.</div>
+<div id="loginForm"><input type="text" id="username" placeholder="Student ID (CPSU-VIC-2026-XXXX)" autocomplete="off"><input type="password" id="password" placeholder="Password" autocomplete="off"><button onclick="loginWithLocation()">🔐 Login & Verify Location</button></div>
+<p id="error" class="error"></p>
+<p class="small-note">👤 Admin: admin / CPSUadmin2026 &nbsp;|&nbsp; 🎓 Student default pass: cpsu+IDlast4</p>
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+<header><h1>🌿 CPSU - Victorias Campus</h1><p>Smart QR Attendance | Enhanced Analytics <span id="resetBadge" class="reset-badge" style="background:#ff9800; padding:4px 12px; border-radius:50px; font-size:11px;"></span></p><button class="logout" onclick="logout()">🚪 Logout</button></header>
+<div class="container">
+<div class="stats">
+<div class="stat">📚 Total Students <h2 id="totalStudents">0</h2></div>
+<div class="stat">✅ Today's Attendance <h2 id="todayAttendance">0</h2></div>
+<div class="stat">🎖️ NSTP Components <h2 id="nstpStats">0</h2></div>
+<div class="stat">🔄 Last Reset <h2 id="lastResetDate">-</h2></div>
+</div>
+
+<!-- NEW: Component Attendance Summary Pie Chart -->
+<div class="attendance-summary" id="attendanceSummary">
+  <div class="summary-card"><h4>📊 ROTC Attendance</h4><div class="percent" id="rotcPercent">0%</div><span id="rotcCount">0/0</span></div>
+  <div class="summary-card"><h4>🤝 CWTS Attendance</h4><div class="percent" id="cwtsPercent">0%</div><span id="cwtsCount">0/0</span></div>
+  <div class="summary-card"><h4>📚 LTS Attendance</h4><div class="percent" id="ltsPercent">0%</div><span id="ltsCount">0/0</span></div>
+</div>
+
+<div class="chart-container"><h3>📈 Today's Attendance Timeline</h3><canvas id="attendanceChart"></canvas></div>
+
+<!-- ADMIN CONTROLS -->
+<div id="adminControls" class="admin-only">
+<h3>⚙️ Admin Hub</h3>
+<div class="campus-location" style="background:#eaf7ea;"><h4>📍 Campus Geofence</h4><input type="text" id="campusLat" placeholder="Latitude" value="10.720150"><input type="text" id="campusLng" placeholder="Longitude" value="122.562106"><input type="number" id="campusRadius" placeholder="Radius (meters)" value="500"><div style="display:flex; gap:10px;"><button onclick="saveCampusLocation()">💾 Save</button><button onclick="getCurrentLocation()" style="background:#17a2b8;">📍 Use My Location</button></div></div>
+<div style="margin:20px 0;"><h4>📂 Bulk Import Students</h4><p class="small-note">Excel (.xlsx), CSV, Word (.docx) — Auto generates IDs</p><input type="file" id="excelFile" accept=".xlsx, .xls, .csv, .docx"><div style="display:flex; gap:10px; margin-top:10px;"><button onclick="document.getElementById('excelFile').click()">📎 Select File</button><button onclick="downloadSampleExcel()">📥 Sample File</button></div></div>
+<hr><h4>🔐 Account Management</h4><button onclick="showStudentPasswords()" style="background:#17a2b8;">👁️ View Passwords</button><button onclick="resetStudentPassword()" style="background:#ff9800;">🔄 Reset Password</button>
+<hr><h4>📆 Attendance Tools</h4><button onclick="viewHistoricalAttendance()" style="background:#17a2b8;">📜 View History</button><button onclick="manualResetAttendance()" style="background:#ff9800;">🔄 Reset Today</button>
+<!-- NEW: Bulk QR Print Button -->
+<button onclick="bulkQRPrint()" class="bulk-print-btn" style="background:#6f42c1; margin-top:15px;">🖨️ Bulk QR Code Print (9 per page)</button>
+</div>
+
+<!-- Component Tabs -->
+<div class="component-tabs"><button class="component-tab active" data-component="ROTC">🎖️ ROTC</button><button class="component-tab" data-component="CWTS">🤝 CWTS</button><button class="component-tab" data-component="LTS">📚 LTS</button></div>
+<div class="filter-bar"><input type="text" id="studentSearch" placeholder="🔍 Search name, course, ID" onkeyup="debounceSearch()"></div>
+<div id="paginationInfo"></div>
+<div class="cards" id="studentCards"></div>
+<div id="pagination" class="pagination"></div>
+
+<!-- QR SCANNER -->
+<h3>📷 Live QR Attendance Scanner</h3>
+<div class="scanner-controls"><button onclick="startManualScanner()">▶️ Start Camera</button><button onclick="stopManualScanner()" style="background:#dc3545;">⏹️ Stop</button></div>
+<div id="manualReader"></div><div id="scanStatus" style="text-align:center; margin:12px;"></div>
+
+<!-- Manual attendance -->
+<div class="manual" style="background:white; padding:24px; border-radius:28px;"><h4>✏️ Manual Attendance Entry</h4><input type="text" id="manualStudentID" placeholder="Enter Student ID"><button onclick="recordManualAttendanceWithLocation()">📌 Mark Attendance + Location</button></div>
+
+<!-- Export QR only -->
+<div style="display: flex; gap: 15px; margin: 20px 0; justify-content: center;"><button onclick="exportAllQRCodes()" style="background:#4a6da7; width: auto; padding: 12px 30px;">🖨️ Export All QR Codes (ZIP)</button></div>
+
+<h3>📋 Today's Attendance <span style="font-size:12px; color:#28a745;">(Live)</span></h3>
+<table><thead><tr><th>Student ID</th><th>Name</th><th>NSTP</th><th>Date</th><th>Time</th><th>Method</th><th>Location</th><th>Action</th></tr></thead><tbody id="attendanceTable"></tbody></table>
+<div id="attendanceCount"></div>
+</div></div>
+
+<!-- Modals -->
+<div id="passwordModal" class="modal"><div class="modal-content"><h3>Student Credentials</h3><div id="passwordList"></div><button onclick="closePasswordModal()">Close</button></div></div>
+<div id="profileModal" class="modal"><div class="modal-content"><h3 id="profileName"></h3><p id="profileID"></p><p><strong>NSTP Component:</strong> <span id="profileNSTP"></span></p><h4>📅 Attendance History</h4><div id="profileHistory" class="profile-attendance-list"></div><button onclick="closeProfileModal()">Close</button></div></div>
+<div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10001; overflow:auto;"><div style="background:white; margin:50px auto; padding:20px; width:90%; max-width:1000px; border-radius:28px;"><div style="display:flex; justify-content:space-between;"><h3>📜 Historical Attendance</h3><button onclick="closeHistoryModal()" style="width:auto; background:#dc3545;">✖ Close</button></div><div id="historyContent"></div></div></div>
+
+<script>
+// ========== DATA & CONFIG ==========
+function generateStudentID(index) { let number = (index + 1).toString().padStart(4, '0'); return `CPSU-VIC-2026-${number}`; }
+let campusConfig = { latitude: 10.720150, longitude: 122.562106, radius: 500 };
+let attendance = [], attendanceHistory = [], students = [], users = [];
+let currentRole = null, currentUserID = null, currentStudentData = null;
+let realtimeInterval = null, lastAttendanceHash = "", lastStudentsHash = "", attendanceChart = null;
+let searchTimeout, currentPage = 1, currentComponent = "ROTC", filteredStudents = [];
+const studentsPerPage = 20;
+
+function loadAllData() { try { let savedStudents = localStorage.getItem("students"); if(savedStudents) students = JSON.parse(savedStudents); let savedAttendance = localStorage.getItem("attendance"); if(savedAttendance) attendance = JSON.parse(savedAttendance); let savedHistory = localStorage.getItem("attendanceHistory"); if(savedHistory) attendanceHistory = JSON.parse(savedHistory); let savedUsers = localStorage.getItem("users"); if(savedUsers) users = JSON.parse(savedUsers); else users = [{ username: "admin", password: "CPSUadmin2026", role: "Admin", studentId: null }]; let savedConfig = localStorage.getItem("campusConfig"); if(savedConfig) campusConfig = JSON.parse(savedConfig); } catch(e) { console.error(e); } checkAndResetDailyAttendance(); updateNSTPStats(); updateLastUpdateTime(); updateComponentSummary(); }
+function checkAndResetDailyAttendance() { let today = new Date().toLocaleDateString(); let lastResetDate = localStorage.getItem("lastResetDate"); if(lastResetDate !== today) { if(attendance.length) { let archived = attendance.map(r => ({...r, archivedDate: lastResetDate || new Date(Date.now()-86400000).toLocaleDateString()})); attendanceHistory.push(...archived); localStorage.setItem("attendanceHistory", JSON.stringify(attendanceHistory)); } attendance = []; localStorage.setItem("attendance", JSON.stringify([])); localStorage.setItem("lastResetDate", today); } }
+function updateNSTPStats() { document.getElementById("nstpStats").innerHTML = `${students.filter(s=>s.nstp==="ROTC").length} ROTC / ${students.filter(s=>s.nstp==="CWTS").length} CWTS / ${students.filter(s=>s.nstp==="LTS").length} LTS`; updateComponentSummary(); }
+function updateComponentSummary() { let today = new Date().toLocaleDateString(); let todayAtt = attendance.filter(a=>a.date===today); let getCount = (comp) => todayAtt.filter(a=>a.nstp===comp).length; let totalComp = (comp) => students.filter(s=>s.nstp===comp).length; let rCount = getCount("ROTC"), rTotal = totalComp("ROTC"); let cCount = getCount("CWTS"), cTotal = totalComp("CWTS"); let lCount = getCount("LTS"), lTotal = totalComp("LTS"); document.getElementById("rotcPercent").innerText = rTotal ? Math.round((rCount/rTotal)*100)+"%" : "0%"; document.getElementById("cwtsPercent").innerText = cTotal ? Math.round((cCount/cTotal)*100)+"%" : "0%"; document.getElementById("ltsPercent").innerText = lTotal ? Math.round((lCount/lTotal)*100)+"%" : "0%"; document.getElementById("rotcCount").innerText = `${rCount}/${rTotal}`; document.getElementById("cwtsCount").innerText = `${cCount}/${cTotal}`; document.getElementById("ltsCount").innerText = `${lCount}/${lTotal}`; }
+function saveAllData() { localStorage.setItem("students", JSON.stringify(students)); localStorage.setItem("attendance", JSON.stringify(attendance)); localStorage.setItem("attendanceHistory", JSON.stringify(attendanceHistory)); localStorage.setItem("users", JSON.stringify(users)); localStorage.setItem("campusConfig", JSON.stringify(campusConfig)); }
+
+// Real-time
+function startRealtimeUpdates() { if(realtimeInterval) clearInterval(realtimeInterval); realtimeInterval = setInterval(checkForUpdates, 2000); }
+function checkForUpdates() { let ca = JSON.parse(localStorage.getItem("attendance")) || [], cs = JSON.parse(localStorage.getItem("students")) || []; let nah = JSON.stringify(ca), nsh = JSON.stringify(cs); if(nah !== lastAttendanceHash) { attendance = ca; lastAttendanceHash = nah; renderAttendance(); updateStats(); updateChart(); updateLastUpdateTime(); highlightStatCard("statToday"); updateComponentSummary(); } if(nsh !== lastStudentsHash) { students = cs; lastStudentsHash = nsh; renderStudents(); updateStats(); updateNSTPStats(); updateComponentSummary(); highlightStatCard("statTotal"); } }
+function updateLastUpdateTime() { document.getElementById("lastUpdateTime").innerHTML = new Date().toLocaleTimeString(); }
+function showRealtimeToast(msg) { let t=document.createElement("div"); t.className="realtime-toast"; t.innerHTML=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+function highlightStatCard(id) { let el=document.getElementById(id); if(el){ el.classList.add("stat-updated"); setTimeout(()=>el.classList.remove("stat-updated"),500); } }
+function initChart() { let ctx = document.getElementById('attendanceChart').getContext('2d'); attendanceChart = new Chart(ctx, { type:'line', data:{ labels:[], datasets:[{ label:'Attendance Records', data:[], borderColor:'#0b7a2a', backgroundColor:'rgba(11,122,42,0.1)', tension:0.4, fill:true }] }, options:{ responsive:true } }); }
+function updateChart() { if(!attendanceChart) return; let hourly={}; for(let i=0;i<24;i++) hourly[i]=0; attendance.forEach(r=>{ let h=parseInt(r.time.split(':')[0]); hourly[h]=(hourly[h]||0)+1; }); let labels=[], data=[]; for(let i=0;i<24;i++){ labels.push(`${i.toString().padStart(2,'0')}:00`); data.push(hourly[i]); } attendanceChart.data.labels=labels; attendanceChart.data.datasets[0].data=data; attendanceChart.update(); }
+
+// Location & Attendance
+function calculateDistance(lat1,lon1,lat2,lon2) { const R=6371e3; const φ1=lat1*Math.PI/180, φ2=lat2*Math.PI/180, Δφ=(lat2-lat1)*Math.PI/180, Δλ=(lon2-lon1)*Math.PI/180; const a=Math.sin(Δφ/2)**2+Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2; return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)); }
+function verifyLocation(pos) { if(!pos) return {verified:false, message:"No location"}; let dist = calculateDistance(pos.coords.latitude, pos.coords.longitude, campusConfig.latitude, campusConfig.longitude); let verified = dist <= campusConfig.radius; return { verified, distance:Math.round(dist), message: verified ? `✅ On campus (${Math.round(dist)}m)` : `❌ Off campus (${Math.round(dist)}m)` }; }
+function getLocationForAttendance() { return new Promise((resolve,reject)=>{ if(!navigator.geolocation) reject("Geolocation unsupported"); navigator.geolocation.getCurrentPosition(resolve, reject, {enableHighAccuracy:true, timeout:10000}); }); }
+function recordAttendanceWithLocation(studentID, method, locationData) { let student = students.find(s=>s.studentID===studentID); if(!student) return {success:false, message:"Student not found"}; let today = new Date().toLocaleDateString(); let now = new Date(); let timeString = now.toLocaleTimeString(); if(attendance.find(a=>a.studentID===studentID && a.date===today)) return {success:false, message:"Already recorded today"}; let locationVerified=false, locationDetails=null; if(locationData) { let verif = verifyLocation(locationData); locationVerified = verif.verified; locationDetails = { distance: verif.distance }; } if(!locationVerified && currentRole !== "Admin") return { success:false, message: locationDetails?`Location: ${locationDetails.distance}m from campus`:"Location failed" }; attendance.push({ studentID, studentName:student.name, nstp:student.nstp, date:today, time:timeString, method, locationVerified, locationDistance:locationDetails?.distance||null }); saveAllData(); if(currentRole==="Admin") showRealtimeToast(`📝 ${student.name} marked via ${method}`); updateComponentSummary(); return { success:true, message:`Recorded ${student.name}`, locationVerified }; }
+
+// LOGIN
+async function loginWithLocation() { let u=document.getElementById("username").value.trim(), p=document.getElementById("password").value.trim(); if(!u||!p) { document.getElementById("error").innerText="Enter credentials"; return; } let user = users.find(x=>x.username===u && x.password===p); if(!user) { document.getElementById("error").innerText="Invalid login"; return; } currentRole=user.role; currentUserID=user.studentId||null; if(currentUserID) currentStudentData = students.find(s=>s.studentID===currentUserID); if(currentRole !== "Admin" && currentUserID) { try { showLoading(true); let loc = await getLocationForAttendance(); let res = recordAttendanceWithLocation(currentUserID, "Login", loc); showLoading(false); if(!res.success && !res.message.includes("Already")) { document.getElementById("error").innerText=res.message; return; } if(res.success) showMessage(res.message+(res.locationVerified?" ✅ On Campus":" ⚠️ Override"), res.locationVerified); } catch(e) { showLoading(false); document.getElementById("error").innerText="Location error: "+e.message; return; } } document.getElementById("loginPage").style.display="none"; document.getElementById("dashboard").style.display="block"; if(currentRole !== "Admin") document.getElementById("adminControls").style.display="none"; else { document.getElementById("adminControls").style.display="block"; document.getElementById("campusLat").value=campusConfig.latitude; document.getElementById("campusLng").value=campusConfig.longitude; document.getElementById("campusRadius").value=campusConfig.radius; if(!attendanceChart) initChart(); updateChart(); startRealtimeUpdates(); } renderStudents(); renderAttendance(); updateStats(); stopLoginScanner(); showMessage(currentRole==="Admin"?"Admin dashboard active.":`Welcome ${currentStudentData?.name || u}`, true); }
+async function recordManualAttendanceWithLocation() { let sid=document.getElementById("manualStudentID").value.trim(); if(!sid) { showScanStatus("Enter Student ID",false); return; } try { showLoading(true); let loc=await getLocationForAttendance(); let res=recordAttendanceWithLocation(sid,"Manual",loc); showLoading(false); if(res.success){ document.getElementById("manualStudentID").value=""; showScanStatus(res.message,true); renderAttendance(); updateStats(); updateChart(); } else showScanStatus(res.message,false); } catch(e){ showLoading(false); showScanStatus("Location error",false); } }
+
+// Component-based rendering
+function setComponent(component) { currentComponent = component; currentPage = 1; document.getElementById("studentSearch").value = ""; document.querySelectorAll('.component-tab').forEach(tab => { if(tab.getAttribute('data-component') === component) tab.classList.add('active'); else tab.classList.remove('active'); }); renderStudents(); }
+function renderStudents() { let searchTerm = document.getElementById("studentSearch").value.toLowerCase(); let componentStudents = students.filter(s => s.nstp === currentComponent); let filtered = componentStudents.filter(s => s.name.toLowerCase().includes(searchTerm) || s.course.toLowerCase().includes(searchTerm) || s.section.toLowerCase().includes(searchTerm) || s.studentID.toLowerCase().includes(searchTerm)); filteredStudents = filtered; let totalPages = Math.ceil(filteredStudents.length / studentsPerPage); let start = (currentPage - 1) * studentsPerPage; let pageStudents = filteredStudents.slice(start, start + studentsPerPage); let container = document.getElementById("studentCards"); if(!container) return; if(pageStudents.length === 0) container.innerHTML = `<p style="text-align:center;">No students found in ${currentComponent}</p>`; else { container.innerHTML = pageStudents.map(s => { let nstpClass = `nstp-${s.nstp.toLowerCase()}`; return `<div class="card" onclick="showStudentProfile('${s.studentID}')"><div class="realtime-badge">🟢 ${s.nstp}</div><h3>${escapeHtml(s.name)}</h3><p>🎓 <span class="id-badge">${s.studentID}</span></p><p>📚 ${escapeHtml(s.course)} - ${escapeHtml(s.section)}</p><p><span class="nstp-badge ${nstpClass}">${s.nstp}</span></p><div class="qr-container"><div id="qr-${s.studentID.replace(/[^a-zA-Z0-9]/g,'-')}" class="qr-code"></div></div><div class="student-actions"><button onclick="event.stopPropagation();downloadQR('${s.studentID}')">📱 Download QR</button><button onclick="event.stopPropagation();showQRModal('${s.studentID}')">🔍 View QR</button>${currentRole==="Admin"?`<button onclick="event.stopPropagation();deleteStudent('${s.studentID}')">🗑️ Delete</button>`:''}</div></div>`; }).join(''); } setTimeout(() => { pageStudents.forEach(s => { let div = document.getElementById(`qr-${s.studentID.replace(/[^a-zA-Z0-9]/g,'-')}`); if(div){ div.innerHTML = ""; new QRCode(div, { text: s.studentID, width: 100, height: 100 }); } }); }, 100); let pagDiv = document.getElementById("pagination"); if(pagDiv && currentRole === "Admin") pagDiv.innerHTML = `<button onclick="changePage(-1)" ${currentPage===1 ? 'disabled' : ''}>Previous</button><span>Page ${currentPage} of ${totalPages||1}</span><button onclick="changePage(1)" ${currentPage===totalPages||totalPages===0 ? 'disabled' : ''}>Next</button>`; else pagDiv.innerHTML = ""; document.getElementById("paginationInfo").innerHTML = `${filteredStudents.length} ${currentComponent} students | Total: ROTC:${students.filter(s=>s.nstp==="ROTC").length} CWTS:${students.filter(s=>s.nstp==="CWTS").length} LTS:${students.filter(s=>s.nstp==="LTS").length}`; }
+function changePage(delta) { let total = Math.ceil(filteredStudents.length / studentsPerPage); let np = currentPage + delta; if(np >= 1 && np <= total) { currentPage = np; renderStudents(); } }
+function debounceSearch() { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => { currentPage = 1; renderStudents(); }, 300); }
+
+// Student Profile View
+function showStudentProfile(studentID) { let student = students.find(s=>s.studentID===studentID); if(!student) return; let history = [...attendance, ...attendanceHistory].filter(r=>r.studentID===studentID).sort((a,b)=>new Date(b.date+' '+b.time) - new Date(a.date+' '+a.time)).slice(0,15); let html = history.length ? `<table style="width:100%"><tr><th>Date</th><th>Time</th><th>Method</th><th>Location</th></tr>`+history.map(h=>`<tr><td>${h.date}</td><td>${h.time}</td><td>${h.method}</td><td>${h.locationVerified?'✅ On Campus':'⚠️ Off Campus'}</td></tr>`).join('')+'</table>' : '<p>No attendance records found.</p>'; document.getElementById("profileName").innerHTML = `👤 ${student.name}`; document.getElementById("profileID").innerHTML = `🎓 ID: ${student.studentID}`; document.getElementById("profileNSTP").innerHTML = student.nstp; document.getElementById("profileHistory").innerHTML = html; document.getElementById("profileModal").style.display = "flex"; }
+function closeProfileModal() { document.getElementById("profileModal").style.display = "none"; }
+
+// Bulk QR Print (9 per page)
+function bulkQRPrint() { if(!students.length){ showMessage("No students",false); return; } let printWindow = window.open('', '_blank'); printWindow.document.write('<html><head><title>Bulk QR Codes</title><style>body{font-family:Arial;padding:20px;} .qr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;} .qr-item{text-align:center;border:1px solid #ccc;padding:15px;border-radius:12px;} .qr-item p{margin:8px 0 0;font-size:12px;} @media print{ .no-print{display:none;} }</style></head><body><h2>CPSU Student QR Codes</h2><div class="qr-grid" id="qrGrid"></div><script>'); students.forEach(s=>{ printWindow.document.write(`
+    let div = document.createElement('div'); div.className = 'qr-item';
+    let qrDiv = document.createElement('div'); new QRCode(qrDiv, { text: '${s.studentID}', width: 120, height: 120 });
+    div.appendChild(qrDiv);
+    let p = document.createElement('p'); p.innerHTML = '<strong>${s.name}</strong><br>${s.studentID}<br>${s.nstp}';
+    div.appendChild(p);
+    document.getElementById('qrGrid').appendChild(div);
+`); }); printWindow.document.write('<\/script><div class="no-print" style="margin-top:20px; text-align:center;"><button onclick="window.print();">Print</button> <button onclick="window.close();">Close</button></div></body></html>'); printWindow.document.close(); setTimeout(()=>{ printWindow.print(); },1000); }
+
+// Other core functions
+function renderAttendance(list=attendance){ let tbody=document.getElementById("attendanceTable"); if(!tbody) return; tbody.innerHTML=""; let recent=list.slice().reverse().slice(0,50); if(recent.length===0) tbody.innerHTML="<tr><td colspan='8'>No records today</td></tr>"; else recent.forEach(a=>{ let locSpan = a.locationVerified ? '<span class="location-badge verified-badge">✅ On Campus</span>' : '<span class="location-badge unverified-badge">📍 Off/Unknown</span>'; let delBtn = currentRole==="Admin" ? `<button onclick="deleteAttendance('${a.studentID}','${a.date}')" style="background:#dc3545; padding:5px 12px;">🗑️</button>` : ""; tbody.innerHTML+=`<tr><td>${a.studentID}</td><td>${a.studentName}</td><td><span class="nstp-badge nstp-${a.nstp.toLowerCase()}">${a.nstp}</span></td><td>${a.date}</td><td>${a.time}</td><td>${a.method}</td><td>${locSpan}</td><td>${delBtn}</td></tr>`; }); document.getElementById("attendanceCount").innerHTML=`${list.length} records (${list.filter(a=>a.locationVerified).length} verified on campus)`; updateComponentSummary(); }
+function deleteStudent(id){ if(confirm("Delete student?")){ students=students.filter(s=>s.studentID!==id); users=users.filter(u=>u.studentId!==id); saveAllData(); renderStudents(); updateStats(); updateNSTPStats(); showMessage("Student deleted",true); } }
+function deleteAttendance(id,date){ if(confirm("Delete record?")){ attendance=attendance.filter(a=>!(a.studentID===id && a.date===date)); saveAllData(); renderAttendance(); updateStats(); updateChart(); showMessage("Record deleted",true); updateComponentSummary(); } }
+function showStudentPasswords(){ if(!students.length){ showMessage("No students",false); return; } let html="<table style='width:100%'><tr><th>ID</th><th>Name</th><th>Password</th></tr>"; students.forEach(s=>{ let u=users.find(uu=>uu.studentId===s.studentID); html+=`<tr><td>${s.studentID}</td><td>${s.name}</td><td><code>${u?u.password:"N/A"}</code></td></tr>`; }); html+="</table>"; document.getElementById("passwordList").innerHTML=html; document.getElementById("passwordModal").style.display="flex"; }
+function closePasswordModal(){ document.getElementById("passwordModal").style.display="none"; }
+function resetStudentPassword(){ let sid=prompt("Enter Student ID:"); if(!sid) return; let s=students.find(s=>s.studentID===sid); if(!s){ showMessage("Not found",false); return; } let newPass = `cpsu${sid.split('-').pop()}`; let idx=users.findIndex(u=>u.studentId===sid); if(idx!==-1){ users[idx].password=newPass; saveAllData(); showMessage(`New password for ${s.name}: ${newPass}`, true); } }
+function viewHistoricalAttendance(){ let html="<table><tr><th>ID</th><th>Name</th><th>NSTP</th><th>Date</th><th>Time</th></tr>"; attendanceHistory.slice().reverse().slice(0,100).forEach(r=>{ html+=`<tr><td>${r.studentID}</td><td>${r.studentName}</td><td>${r.nstp}</td><td>${r.date}</td><td>${r.time}</td></tr>`; }); html+="</table>"; document.getElementById("historyContent").innerHTML=html||"<p>No history</p>"; document.getElementById("historyModal").style.display="block"; }
+function closeHistoryModal(){ document.getElementById("historyModal").style.display="none"; }
+function manualResetAttendance(){ if(confirm("Reset today's attendance?")){ let today=new Date().toLocaleDateString(); let todayRec=attendance.filter(a=>a.date===today); if(todayRec.length){ attendanceHistory.push(...todayRec.map(r=>({...r,archivedDate:today}))); attendance=attendance.filter(a=>a.date!==today); saveAllData(); renderAttendance(); updateStats(); updateChart(); showMessage("Today's attendance archived",true); updateComponentSummary(); }else showMessage("No records",false); } }
+function exportAllQRCodes(){ if(!students.length){ showMessage("No students",false); return; } let zip=new JSZip(); let promises=students.map(st=>new Promise(resolve=>{ let div=document.createElement("div"); new QRCode(div,{text:st.studentID,width:200,height:200}); setTimeout(()=>{ let canvas=div.querySelector("canvas"); if(canvas){ let data=canvas.toDataURL().split(',')[1]; zip.file(`${st.studentID}_qr.png`,data,{base64:true}); } resolve(); },100); })); Promise.all(promises).then(()=>{ zip.generateAsync({type:"blob"}).then(blob=>{ let a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="all_qr_codes.zip"; a.click(); showMessage("QR codes exported",true); }); }); }
+function downloadQR(id){ let div=document.createElement("div"); new QRCode(div,{text:id,width:200,height:200}); setTimeout(()=>{ let canvas=div.querySelector("canvas"); if(canvas){ let a=document.createElement("a"); a.download=`${id}_qr.png`; a.href=canvas.toDataURL(); a.click(); showMessage(`QR saved`,true); } },100); }
+function showQRModal(id){ let modal=document.getElementById("qrModal"); if(!modal){ modal=document.createElement("div"); modal.id="qrModal"; modal.className="modal"; modal.innerHTML=`<div class="modal-content"><h3>QR Code</h3><div id="modalQR"></div><button onclick="closeQRModal()">Close</button></div>`; document.body.appendChild(modal); } document.getElementById("modalQR").innerHTML=""; new QRCode(document.getElementById("modalQR"),{text:id,width:250,height:250}); modal.style.display="flex"; }
+function closeQRModal(){ let m=document.getElementById("qrModal"); if(m) m.style.display="none"; }
+function saveCampusLocation(){ let lat=parseFloat(document.getElementById("campusLat").value), lng=parseFloat(document.getElementById("campusLng").value), rad=parseFloat(document.getElementById("campusRadius").value); if(isNaN(lat)||isNaN(lng)||isNaN(rad)){ showMessage("Invalid numbers",false); return; } campusConfig={latitude:lat,longitude:lng,radius:rad}; saveAllData(); showMessage("Campus location updated",true); }
+function getCurrentLocation(){ if(navigator.geolocation) navigator.geolocation.getCurrentPosition(pos=>{ document.getElementById("campusLat").value=pos.coords.latitude; document.getElementById("campusLng").value=pos.coords.longitude; showMessage("Location fetched",true); }, err=>showMessage("Failed: "+err.message,false)); else showMessage("Geo not supported",false); }
+function downloadSampleExcel(){ const ws=XLSX.utils.aoa_to_sheet([["Name","Course","Section","NSTP_Component","Password"],["Sample Student","BSCS","1A","ROTC","sample123"]]); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Students"); XLSX.writeFile(wb,"sample_students.xlsx"); }
+function importExcel(file){ if(!file) return; showLoading(true); let reader=new FileReader(); reader.onload=e=>{ try{ let data=new Uint8Array(e.target.result); let workbook=XLSX.read(data,{type:'array'}); let sheet=workbook.Sheets[workbook.SheetNames[0]]; let rows=XLSX.utils.sheet_to_json(sheet); let added=0, start=students.length; rows.forEach(row=>{ let name=row.Name||row.name, course=row.Course||row.course, section=row.Section||row.section, nstp=(row.NSTP_Component||row.nstp||"").toUpperCase(), pwd=row.Password||`cpsu${(start+added+1).toString().padStart(4,'0')}`; if(name&&course&&section&&["ROTC","CWTS","LTS"].includes(nstp)){ let sid=generateStudentID(start+added); students.push({studentID:sid,name,course,section,nstp}); users.push({username:sid,password:pwd,role:"Student",studentId:sid}); added++; } }); if(added){ saveAllData(); renderStudents(); updateStats(); updateNSTPStats(); showMessage(`Imported ${added} students`,true); } else showMessage("No valid rows",false); } catch(e){ showMessage("Error: "+e.message,false); } showLoading(false); }; reader.readAsArrayBuffer(file); }
+document.getElementById("excelFile").addEventListener("change", e=> importExcel(e.target.files[0]));
+function updateStats(){ document.getElementById("totalStudents").innerText=students.length; document.getElementById("todayAttendance").innerText=attendance.filter(a=>a.date===new Date().toLocaleDateString()).length; document.getElementById("lastResetDate").innerText=localStorage.getItem("lastResetDate")||new Date().toLocaleDateString(); }
+let manualScanner=null, loginScanner=null;
+function startManualScanner(){ if(!manualScanner) manualScanner=new Html5Qrcode("manualReader"); manualScanner.start({facingMode:"environment"},{fps:10,qrbox:250},async text=>{ stopManualScanner(); let res=recordAttendanceWithLocation(text.trim(),"QR Scan",await getLocationForAttendance().catch(()=>null)); showScanStatus(res.message,res.success); if(res.success){ renderAttendance(); updateStats(); updateChart(); } setTimeout(()=>startManualScanner(),2500); },err=>console.warn); }
+function stopManualScanner(){ if(manualScanner && manualScanner.isScanning) manualScanner.stop(); }
+function startLoginScanner(){ if(!loginScanner) loginScanner=new Html5Qrcode("loginReader"); loginScanner.start({facingMode:"environment"},{fps:10,qrbox:200},text=>{ document.getElementById("username").value=text; showMessage("QR scanned, enter password",true); }); }
+function stopLoginScanner(){ if(loginScanner && loginScanner.isScanning) loginScanner.stop(); }
+function showLoading(show){ document.getElementById("loadingIndicator").style.display=show?"block":"none"; }
+function showMessage(msg,success){ let d=document.getElementById("loginStatusMessage"); d.innerHTML=msg; d.style.backgroundColor=success?"#d4edda":"#f8d7da"; d.style.color=success?"#155724":"#721c24"; d.style.display="block"; setTimeout(()=>d.style.display="none",3000); }
+function showScanStatus(msg,success){ let div=document.getElementById("scanStatus"); div.innerHTML=msg; div.style.backgroundColor=success?"#d4edda":"#f8d7da"; div.style.padding="10px"; div.style.borderRadius="30px"; setTimeout(()=>div.innerHTML="",3000); }
+function showRealtimeStatus(){ showMessage(`🟢 Real-time active. Last update: ${document.getElementById("lastUpdateTime").innerHTML}`, true); }
+function logout(){ if(confirm("Logout?")){ stopRealtimeUpdates(); location.reload(); } }
+function escapeHtml(t){ if(!t) return ''; return t.replace(/[&<>]/g, m=> m==='&'?'&amp;': m==='<'?'&lt;':'&gt;'); }
+
+document.querySelectorAll('.component-tab').forEach(tab => { tab.addEventListener('click', () => setComponent(tab.getAttribute('data-component'))); });
+loadAllData();
+window.onload = function() { setTimeout(() => { if(document.getElementById("loginPage").style.display !== "none") startLoginScanner(); }, 1000); };
+</script>
+</body>
+</html>
 <head>
 <meta charset="UTF-8">
 <title>CPSU Smart QR Attendance System - Real-Time Updates</title>
